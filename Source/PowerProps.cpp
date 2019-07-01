@@ -1,22 +1,32 @@
 /*
 PowerProps Library Source File
 
-Copyright © 2009-2017, Keelan Stuart. All rights reserved.
+Copyright © 2009-2019, Keelan Stuart. All rights reserved.
 
 PowerProps is a generic property library which one can use to maintain
 easily discoverable data in a number of types, as well as convert that
 data to other formats and de/serialize in multiple modes
 
-mqme is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 3 of the License, or
-(at your option) any later version.
+PowerProps is free software; you can redistribute it and/or modify it under
+the terms of the MIT License:
 
-mqme is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-See <http://www.gnu.org/licenses/>.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
 #include "stdafx.h"
@@ -71,6 +81,7 @@ public:
 	// call release()!
 	virtual ~CProperty()
 	{
+		Reset();
 	}
 
 	virtual const TCHAR *GetName()
@@ -129,8 +140,6 @@ public:
 
 	virtual void Release()
 	{
-		Reset();
-
 		delete this;
 	}
 
@@ -371,6 +380,26 @@ public:
 		{
 			m_e = val;
 			return true;
+		}
+
+		return false;
+	}
+
+	virtual bool SetEnumValByString(const TCHAR *s)
+	{
+		if (m_Type != PT_ENUM)
+			return false;
+
+		assert(m_es);
+
+		size_t val = 0;
+		for (TStringDeque::const_iterator it = m_es->cbegin(), last_it = m_es->cend(); it != last_it; it++, val++)
+		{
+			if (!_tcsicmp(it->c_str(), s))
+			{
+				m_e = val;
+				return true;
+			}
 		}
 
 		return false;
@@ -792,12 +821,12 @@ public:
 			switch (m_Type)
 			{
 				case PT_STRING:
-					_tcsncpy_s(ret, retsize, m_s, retsize);
+					_tcsncpy_s(ret, retsize, m_s ? m_s : _T(""), retsize);
 					break;
 
 				case PT_ENUM:
 					if (m_e < m_es->size())
-					_tcsncpy_s(ret, retsize, m_es->at(m_e).c_str(), retsize);
+						_tcsncpy_s(ret, retsize, m_es->at(m_e).c_str(), retsize);
 					break;
 
 				case PT_INT:
@@ -1058,12 +1087,11 @@ public:
 
 	virtual ~CPropertySet()
 	{
+		DeleteAll();
 	}
 
 	virtual void Release()
 	{
-		DeleteAll();
-
 		delete this;
 	}
 

@@ -210,6 +210,7 @@ namespace props
 			PA_COLOR_RGBA,		/// INT - RGBA
 			PA_LATLON,			/// VEC2/VEC3 lattitude / longitude / altitude (if vec3)
 			PA_ELEVAZIM,		/// VEC2 azimuth / elevation
+			PA_RASCDEC,			/// VEC2 right ascension / declination
 			PA_QUATERNION,		/// VEC4
 			PA_BOOL_ONOFF,		/// BOOL TYPE "on" "off"
 			PA_BOOL_YESNO,		/// BOOL TYPE "yes" "no"
@@ -309,6 +310,9 @@ namespace props
 
 		/// Sets the enum index into the enum values. Returns true if the desired index was valid, false if not
 		virtual bool SetEnumVal(size_t val) = NULL;
+
+		/// Sets the enum value by case-insensitive compares with the enum strings
+		virtual bool SetEnumValByString(const TCHAR *s) = NULL;
 
 		/// Returns an individual enumerated string by index
 		virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
