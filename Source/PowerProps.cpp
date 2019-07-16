@@ -179,12 +179,40 @@ public:
 						bufsz = _sctprintf(_T("%s"), m_s);
 						break;
 
+					case PT_BOOLEAN:
+						bufsz = _sctprintf(_T("%I64d"), m_b);
+						break;
+
 					case PT_INT:
 						bufsz = _sctprintf(_T("%I64d"), m_i);
 						break;
 
+					case PT_INT_V2:
+						bufsz = _sctprintf(_T("%I64d,%I64d"), m_v2i.x, m_v2i.y);
+						break;
+
+					case PT_INT_V3:
+						bufsz = _sctprintf(_T("%I64d,%I64d,%I64d"), m_v3i.x, m_v3i.y, m_v3i.z);
+						break;
+
+					case PT_INT_V4:
+						bufsz = _sctprintf(_T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
+						break;
+
 					case PT_REAL:
 						bufsz = _sctprintf(_T("%f"), m_r);
+						break;
+
+					case PT_REAL_V2:
+						bufsz = _sctprintf(_T("%f,%f"), m_v2r.x, m_v2r.y);
+						break;
+
+					case PT_REAL_V3:
+						bufsz = _sctprintf(_T("%f,%f,%f"), m_v3r.x, m_v3r.y, m_v3r.z);
+						break;
+
+					case PT_REAL_V4:
+						bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
 						break;
 
 					case PT_GUID:
@@ -829,12 +857,40 @@ public:
 						_tcsncpy_s(ret, retsize, m_es->at(m_e).c_str(), retsize);
 					break;
 
+				case PT_BOOLEAN:
+					_sntprintf_s(ret, retsize, retsize, _T("%I64d"), m_b);
+					break;
+
 				case PT_INT:
 					_sntprintf_s(ret, retsize, retsize, _T("%I64d"), m_i);
 					break;
 
+				case PT_INT_V2:
+					_sntprintf_s(ret, retsize, retsize, _T("%I64d,%I64d"), m_v2i.x, m_v2i.y);
+					break;
+
+				case PT_INT_V3:
+					_sntprintf_s(ret, retsize, retsize, _T("%I64d,%I64d,%I64d"), m_v3i.x, m_v3i.y, m_v3i.z);
+					break;
+
+				case PT_INT_V4:
+					_sntprintf_s(ret, retsize, retsize, _T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
+					break;
+
 				case PT_REAL:
 					_sntprintf_s(ret, retsize, retsize, _T("%f"), m_r);
+					break;
+
+				case PT_REAL_V2:
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f"), m_v2r.x, m_v2r.y);
+					break;
+
+				case PT_REAL_V3:
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f"), m_v3r.x, m_v3r.y, m_v3r.z);
+					break;
+
+				case PT_REAL_V4:
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
 					break;
 
 				case PT_GUID:
@@ -926,21 +982,21 @@ public:
 
 		switch (m_Type)
 		{
-		case PT_STRING:
-			sz += (_tcslen(m_s) + 1) * sizeof(TCHAR);
-			break;
+			case PT_STRING:
+				sz += (_tcslen(m_s) + 1) * sizeof(TCHAR);
+				break;
 
-		case PT_INT:
-			sz += sizeof(int64_t);
-			break;
+			case PT_INT:
+				sz += sizeof(int64_t);
+				break;
 
-		case PT_REAL:
-			sz += sizeof(double);
-			break;
+			case PT_REAL:
+				sz += sizeof(double);
+				break;
 
-		case PT_GUID:
-			sz += sizeof(GUID);
-			break;
+			case PT_GUID:
+				sz += sizeof(GUID);
+				break;
 		}
 
 		if (amountused)
@@ -974,28 +1030,28 @@ public:
 
 		switch (m_Type)
 		{
-		case PT_STRING:
-		{
-			size_t bs = sizeof(TCHAR) * (_tcslen(m_s) + 1);
-			memcpy(buf, m_sName.c_str(), bs);
-			buf += bs;
-			break;
-		}
+			case PT_STRING:
+			{
+				size_t bs = sizeof(TCHAR) * (_tcslen(m_s) + 1);
+				memcpy(buf, m_s, bs);
+				buf += bs;
+				break;
+			}
 
-		case PT_INT:
-			*((int64_t *)buf) = m_i;
-			buf += sizeof(int64_t);
-			break;
+			case PT_INT:
+				*((int64_t *)buf) = m_i;
+				buf += sizeof(int64_t);
+				break;
 
-		case PT_REAL:
-			*((double *)buf) = m_r;
-			buf += sizeof(double);
-			break;
+			case PT_REAL:
+				*((double *)buf) = m_r;
+				buf += sizeof(double);
+				break;
 
-		case PT_GUID:
-			*((GUID *)buf) = m_g;
-			buf += sizeof(GUID);
-			break;
+			case PT_GUID:
+				*((GUID *)buf) = m_g;
+				buf += sizeof(GUID);
+				break;
 		}
 
 		return true;
@@ -1038,27 +1094,27 @@ public:
 
 		switch (m_Type)
 		{
-		case PT_STRING:
-		{
-			m_s = _tcsdup((TCHAR *)buf);
-			buf += sizeof(TCHAR) * (_tcslen(m_s) + 1);
-			break;
-		}
+			case PT_STRING:
+			{
+				m_s = _tcsdup((TCHAR *)buf);
+				buf += sizeof(TCHAR) * (_tcslen(m_s) + 1);
+				break;
+			}
 
-		case PT_INT:
-			m_i = *((int64_t *)buf);
-			buf += sizeof(int64_t);
-			break;
+			case PT_INT:
+				m_i = *((int64_t *)buf);
+				buf += sizeof(int64_t);
+				break;
 
-		case PT_REAL:
-			m_r = *((double *)buf);
-			buf += sizeof(double);
-			break;
+			case PT_REAL:
+				m_r = *((double *)buf);
+				buf += sizeof(double);
+				break;
 
-		case PT_GUID:
-			m_g = *((GUID *)buf);
-			buf += sizeof(GUID);
-			break;
+			case PT_GUID:
+				m_g = *((GUID *)buf);
+				buf += sizeof(GUID);
+				break;
 		}
 
 		if (bytesconsumed)
@@ -1306,6 +1362,7 @@ public:
 
 		*((short *)buf) = short(m_mapProps.size());
 		bufsize -= sizeof(short);
+		buf += sizeof(short);
 
 		for (TPropertyMap::const_iterator it = m_mapProps.begin(), last_it = m_mapProps.end(); it != last_it; it++)
 		{
@@ -1341,16 +1398,19 @@ public:
 			CProperty *p = (CProperty *)GetPropertyById(id);
 			if (!p)
 			{
-				CProperty *p = new CProperty();
-				p->SetID(id);
-				AddProperty(p);
+				p = new CProperty();
+				if (p)
+				{
+					p->SetID(id);
+					AddProperty(p);
+				}
 			}
 
 			if (!p || !p->Deserialize(buf, bufsize, &consumed))
 				return false;
 
 			buf += consumed;
-			if (consumed <= bufsize)
+			if (consumed < bufsize)
 				return false;
 
 			bufsize -= consumed;
