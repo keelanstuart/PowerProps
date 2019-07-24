@@ -155,10 +155,103 @@ public:
 
 		switch (newtype)
 		{
+			case PT_BOOLEAN:
+			{
+				if (!_tcsicmp(m_s, _T("0")) || !_tcsicmp(m_s, _T("false")) || !_tcsicmp(m_s, _T("no")) || !_tcsicmp(m_s, _T("off")))
+					SetBool(false);
+				else if (!_tcsicmp(m_s, _T("1")) || !_tcsicmp(m_s, _T("true")) || !_tcsicmp(m_s, _T("yes")) || !_tcsicmp(m_s, _T("on")))
+					SetBool(true);
+				break;
+			}
+
 			case PT_INT:
 			{
-				int64_t i;
-				SetInt(AsInt(&i));
+				int64_t x;
+				SetInt(AsInt(&x));
+				break;
+			}
+
+			case PT_INT_V2:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						int64_t x, y;
+						_stscanf_s(m_s, _T("%I64d,%I64d"), &x, &y);
+						SetVec2I(props::TVec2I(x, y));
+						break;
+					}
+
+					case PT_REAL_V2:
+					case PT_REAL_V3:
+					case PT_REAL_V4:
+					{
+						SetVec2I(props::TVec2I(int64_t(m_v2r.x), int64_t(m_v2r.y)));
+						break;
+					}
+
+					case PT_INT_V3:
+					case PT_INT_V4:
+						m_Type = PT_INT_V2;
+						break;
+
+					default:
+						break;
+				}
+				break;
+			}
+
+			case PT_INT_V3:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						int64_t x, y, z;
+						_stscanf_s(m_s, _T("%I64d,%I64d,%I64d"), &x, &y, &z);
+						SetVec3I(props::TVec3I(x, y, z));
+						break;
+					}
+
+					case PT_REAL_V3:
+					case PT_REAL_V4:
+					{
+						SetVec3I(props::TVec3I(int64_t(m_v3r.x), int64_t(m_v3r.y), int64_t(m_v3r.z)));
+						break;
+					}
+
+					case PT_INT_V4:
+						m_Type = PT_INT_V3;
+						break;
+
+					default:
+						break;
+				}
+				break;
+			}
+
+			case PT_INT_V4:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						int64_t x, y, z, w;
+						_stscanf_s(m_s, _T("%I64d,%I64d,%I64d,%I64d"), &x, &y, &z, &w);
+						SetVec4I(props::TVec4I(x, y, z, w));
+						break;
+					}
+
+					case PT_REAL_V4:
+					{
+						SetVec4I(props::TVec4I(int64_t(m_v4r.x), int64_t(m_v4r.y), int64_t(m_v4r.z), int64_t(m_v4r.w)));
+						break;
+					}
+
+					default:
+						break;
+				}
 				break;
 			}
 
@@ -166,6 +259,90 @@ public:
 			{
 				double f;
 				SetReal(AsReal(&f));
+				break;
+			}
+
+			case PT_REAL_V2:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						double x, y;
+						_stscanf_s(m_s, _T("%lf,%lf"), &x, &y);
+						SetVec2R(props::TVec2R(x, y));
+						break;
+					}
+
+					case PT_INT_V2:
+					case PT_INT_V3:
+					case PT_INT_V4:
+					{
+						SetVec2R(props::TVec2R(double(m_v2i.x), double(m_v2i.y)));
+						break;
+					}
+
+					case PT_REAL_V3:
+					case PT_REAL_V4:
+						m_Type = PT_REAL_V2;
+						break;
+
+					default:
+						break;
+				}
+				break;
+			}
+
+			case PT_REAL_V3:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						double x, y, z;
+						_stscanf_s(m_s, _T("%lf,%lf,%lf"), &x, &y, &z);
+						SetVec3R(props::TVec3R(x, y, z));
+						break;
+					}
+
+					case PT_INT_V3:
+					case PT_INT_V4:
+					{
+						SetVec3R(props::TVec3R(double(m_v3i.x), double(m_v3i.y), double(m_v3i.z)));
+						break;
+					}
+
+					case PT_REAL_V4:
+						m_Type = PT_REAL_V3;
+						break;
+
+					default:
+						break;
+				}
+				break;
+			}
+
+			case PT_REAL_V4:
+			{
+				switch (m_Type)
+				{
+					case PT_STRING:
+					{
+						double x, y, z, w;
+						_stscanf_s(m_s, _T("%lf,%lf,%lf,%lf"), &x, &y, &z, &w);
+						SetVec4R(props::TVec4R(x, y, z, w));
+						break;
+					}
+
+					case PT_INT_V4:
+					{
+						SetVec4R(props::TVec4R(double(m_v4i.x), double(m_v4i.y), double(m_v4i.z), double(m_v4i.w)));
+						break;
+					}
+
+					default:
+						break;
+				}
 				break;
 			}
 
@@ -180,7 +357,7 @@ public:
 						break;
 
 					case PT_BOOLEAN:
-						bufsz = _sctprintf(_T("%I64d"), m_b);
+						bufsz = _sctprintf(_T("%d"), m_b);
 						break;
 
 					case PT_INT:
@@ -200,19 +377,19 @@ public:
 						break;
 
 					case PT_REAL:
-						bufsz = _sctprintf(_T("%f"), m_r);
+						bufsz = _sctprintf(_T("%lf"), m_r);
 						break;
 
 					case PT_REAL_V2:
-						bufsz = _sctprintf(_T("%f,%f"), m_v2r.x, m_v2r.y);
+						bufsz = _sctprintf(_T("%lf,%lf"), m_v2r.x, m_v2r.y);
 						break;
 
 					case PT_REAL_V3:
-						bufsz = _sctprintf(_T("%f,%f,%f"), m_v3r.x, m_v3r.y, m_v3r.z);
+						bufsz = _sctprintf(_T("%lf,%lf,%lf"), m_v3r.x, m_v3r.y, m_v3r.z);
 						break;
 
 					case PT_REAL_V4:
-						bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
+						bufsz = _sctprintf(_T("%lf,%lf,%lf,%lf"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
 						break;
 
 					case PT_GUID:
@@ -858,7 +1035,7 @@ public:
 					break;
 
 				case PT_BOOLEAN:
-					_sntprintf_s(ret, retsize, retsize, _T("%I64d"), m_b);
+					_sntprintf_s(ret, retsize, retsize, _T("%d"), m_b);
 					break;
 
 				case PT_INT:
