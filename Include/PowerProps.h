@@ -245,13 +245,15 @@ namespace props
 			FS_REQUIRED = 0,		/// Indicates that the property is required and must not be renamed / removed
 			FS_READONLY,			/// Indicates that the property is not editable by the user
 			FS_HIDDEN,				/// Indicates that the property is not viewable by the user
+			FS_TOOLTIPITEM,			/// Indicates that this property should be displayed by a tooltip helper
 
 			FS_FIRSTUSERFLAG		/// If you need your own special flags that aren't here, start adding them at this point
 		};
 
-		#define PROPFLAG_REQUIRED	(1 << props::IProperty::FLAG_SHIFT::FS_REQUIRED)
-		#define PROPFLAG_READONLY	(1 << props::IProperty::FLAG_SHIFT::FS_READONLY)
-		#define PROPFLAG_HIDDEN		(1 << props::IProperty::FLAG_SHIFT::FS_HIDDEN)
+		#define PROPFLAG_REQUIRED		(1 << props::IProperty::FLAG_SHIFT::FS_REQUIRED)
+		#define PROPFLAG_READONLY		(1 << props::IProperty::FLAG_SHIFT::FS_READONLY)
+		#define PROPFLAG_HIDDEN			(1 << props::IProperty::FLAG_SHIFT::FS_HIDDEN)
+		#define PROPFLAG_TOOLTIPITEM	(1 << props::IProperty::FLAG_SHIFT::FS_TOOLTIPITEM)
 
 
 		virtual void Release() = NULL;
