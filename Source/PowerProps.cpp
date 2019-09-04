@@ -1005,7 +1005,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TCHAR *AsString(TCHAR *ret, size_t retsize)
+	virtual const TCHAR *AsString(TCHAR *ret, size_t retsize) const
 	{
 		if (m_Type == PT_STRING)
 		{

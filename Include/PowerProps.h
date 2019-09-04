@@ -303,7 +303,7 @@ namespace props
 		virtual const TVec2R *AsVec2R(TVec2R *ret = nullptr) = NULL;
 		virtual const TVec3R *AsVec3R(TVec3R *ret = nullptr) = NULL;
 		virtual const TVec4R *AsVec4R(TVec4R *ret = nullptr) = NULL;
-		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
+		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 		virtual GUID AsGUID(GUID *ret = nullptr) = NULL;
 		virtual bool AsBool(bool *ret = nullptr) = NULL;
 
