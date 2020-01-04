@@ -163,6 +163,7 @@ namespace props
 	};
 
 	typedef SFlagset<uint32_t> TFlags32;
+	typedef SFlagset<uint64_t> TFlags64;
 	typedef SVec2<int64_t> TVec2I;
 	typedef SVec3<int64_t> TVec3I;
 	typedef SVec4<int64_t> TVec4I;
@@ -246,6 +247,7 @@ namespace props
 			FS_READONLY,			/// Indicates that the property is not editable by the user
 			FS_HIDDEN,				/// Indicates that the property is not viewable by the user
 			FS_TOOLTIPITEM,			/// Indicates that this property should be displayed by a tooltip helper
+			FS_TYPELOCKED,			/// The type may not be changed
 
 			FS_FIRSTUSERFLAG		/// If you need your own special flags that aren't here, start adding them at this point
 		};
@@ -254,6 +256,7 @@ namespace props
 		#define PROPFLAG_READONLY		(1 << props::IProperty::FLAG_SHIFT::FS_READONLY)
 		#define PROPFLAG_HIDDEN			(1 << props::IProperty::FLAG_SHIFT::FS_HIDDEN)
 		#define PROPFLAG_TOOLTIPITEM	(1 << props::IProperty::FLAG_SHIFT::FS_TOOLTIPITEM)
+		#define PROPFLAG_TYPELOCKED		(1 << props::IProperty::FLAG_SHIFT::FS_TYPELOCKED)
 
 
 		virtual void Release() = NULL;
