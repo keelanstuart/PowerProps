@@ -733,7 +733,7 @@ public:
 
 			case PT_ENUM:
 				SetEnumStrings(pprop->GetEnumStrings());
-				SetEnumVal(pprop->AsInt());
+				SetEnumVal((size_t)(pprop->AsInt()));
 				break;
 		}
 
