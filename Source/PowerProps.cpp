@@ -1,7 +1,7 @@
 /*
 PowerProps Library Source File
 
-Copyright © 2009-2019, Keelan Stuart. All rights reserved.
+Copyright © 2009-2020, Keelan Stuart. All rights reserved.
 
 PowerProps is a generic property library which one can use to maintain
 easily discoverable data in a number of types, as well as convert that
@@ -35,6 +35,50 @@ SOFTWARE.
 
 using namespace props;
 
+
+#define PROPFLAG_REFERENCE		(1 << 31)
+
+
+class CPropertySet : public IPropertySet
+{
+protected:
+	typedef ::std::deque<IProperty *> TPropertyArray;
+	TPropertyArray m_Props;
+
+	typedef ::std::map<FOURCHARCODE, IProperty *> TPropertyMap;
+	typedef ::std::pair<FOURCHARCODE, IProperty *> TPropertyMapPair;
+	TPropertyMap m_mapProps;
+
+public:
+	IPropertyChangeListener *m_pListener;
+
+public:
+
+	CPropertySet();
+	virtual ~CPropertySet();
+
+	virtual void Release();
+	virtual IProperty *CreateProperty(const TCHAR *propname, FOURCHARCODE propid);
+	virtual IProperty *CreateReferenceProperty(const TCHAR *propname, FOURCHARCODE propid, void *addr, IProperty::PROPERTY_TYPE type);
+	virtual void AddProperty(IProperty *pprop);
+	virtual void DeleteProperty(size_t idx);
+	virtual void DeletePropertyById(FOURCHARCODE propid);
+	virtual void DeletePropertyByName(const TCHAR *propname);
+	virtual void DeleteAll();
+	virtual size_t GetPropertyCount() const;
+	virtual IProperty *GetProperty(size_t idx) const;
+	virtual IProperty *GetPropertyById(props::FOURCHARCODE propid) const;
+	virtual IProperty *GetPropertyByName(const TCHAR *propname) const;
+	virtual CPropertySet &operator =(IPropertySet *propset);
+	virtual CPropertySet &operator +=(IPropertySet *propset);
+	virtual void AppendPropertySet(const IPropertySet *propset);
+	virtual bool Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused) const;
+	virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed);
+	virtual void SetChangeListener(const IPropertyChangeListener *plistener);
+};
+
+
+
 class CProperty : public IProperty
 {
 public:
@@ -43,6 +87,7 @@ public:
 	tstring m_sName;
 	FOURCHARCODE m_ID;
 	TFlags32 m_Flags;
+	CPropertySet *m_pOwner;
 
 	typedef std::deque<tstring> TStringDeque;
 
@@ -54,28 +99,29 @@ public:
 			TCHAR *m_s;
 			union
 			{
-				int64_t m_i;
+				int64_t m_i, *p_i;
 				size_t m_e;
 			};
 			TStringDeque *m_es;
 		};
-		TVec2I m_v2i;
-		TVec3I m_v3i;
-		TVec4I m_v4i;
-		double m_r;
-		TVec2R m_v2r;
-		TVec3R m_v3r;
-		TVec4R m_v4r;
-		GUID m_g;
-		bool m_b;
+		TVec2I m_v2i, *p_v2i;
+		TVec3I m_v3i, *p_v3i;
+		TVec4I m_v4i, *p_v4i;
+		float m_f, *p_f;
+		TVec2F m_v2f, *p_v2f;
+		TVec3F m_v3f, *p_v3f;
+		TVec4F m_v4f, *p_v4f;
+		GUID m_g, *p_g;
+		bool m_b, *p_b;
 	};
 
-	CProperty()
+	CProperty(CPropertySet *powner)
 	{
 		m_Type = PT_NONE;
 		m_Aspect = PA_GENERIC;
 		m_s = nullptr;
 		m_es = nullptr;
+		m_pOwner = powner;
 	}
 
 	// call release()!
@@ -84,7 +130,7 @@ public:
 		Reset();
 	}
 
-	virtual const TCHAR *GetName()
+	virtual const TCHAR *GetName() const
 	{
 		return m_sName.c_str();
 	}
@@ -94,7 +140,7 @@ public:
 		m_sName = name;
 	}
 
-	virtual FOURCHARCODE GetID()
+	virtual FOURCHARCODE GetID() const
 	{
 		return m_ID;
 	}
@@ -143,13 +189,16 @@ public:
 		delete this;
 	}
 
-	virtual PROPERTY_TYPE GetType()
+	virtual PROPERTY_TYPE GetType() const
 	{
 		return m_Type;
 	}
 
 	virtual bool ConvertTo(PROPERTY_TYPE newtype)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED))
+			return false;
+
 		if (newtype == m_Type)
 			return true;
 
@@ -183,14 +232,22 @@ public:
 						break;
 					}
 
+					case PT_REAL:
+					{
+						SetVec2I(props::TVec2I(int64_t(m_v2f.x)));
+						break;
+					}
+
 					case PT_REAL_V2:
 					case PT_REAL_V3:
 					case PT_REAL_V4:
 					{
-						SetVec2I(props::TVec2I(int64_t(m_v2r.x), int64_t(m_v2r.y)));
+						SetVec2I(props::TVec2I(int64_t(m_v2f.x), int64_t(m_v2f.y)));
 						break;
 					}
 
+					case PT_INT:
+						m_v2i.y = 0;
 					case PT_INT_V3:
 					case PT_INT_V4:
 						m_Type = PT_INT_V2;
@@ -214,13 +271,29 @@ public:
 						break;
 					}
 
-					case PT_REAL_V3:
-					case PT_REAL_V4:
+					case PT_REAL:
 					{
-						SetVec3I(props::TVec3I(int64_t(m_v3r.x), int64_t(m_v3r.y), int64_t(m_v3r.z)));
+						SetVec3I(props::TVec3I(int64_t(m_v3f.x)));
 						break;
 					}
 
+					case PT_REAL_V2:
+					{
+						SetVec3I(props::TVec3I(int64_t(m_v3f.x), int64_t(m_v3f.x)));
+						break;
+					}
+
+					case PT_REAL_V3:
+					case PT_REAL_V4:
+					{
+						SetVec3I(props::TVec3I(int64_t(m_v3f.x), int64_t(m_v3f.y), int64_t(m_v3f.z)));
+						break;
+					}
+
+					case PT_INT:
+						m_v2i.y = 0;
+					case PT_INT_V2:
+						m_v3i.z = 0;
 					case PT_INT_V4:
 						m_Type = PT_INT_V3;
 						break;
@@ -245,9 +318,18 @@ public:
 
 					case PT_REAL_V4:
 					{
-						SetVec4I(props::TVec4I(int64_t(m_v4r.x), int64_t(m_v4r.y), int64_t(m_v4r.z), int64_t(m_v4r.w)));
+						SetVec4I(props::TVec4I(int64_t(m_v4f.x), int64_t(m_v4f.y), int64_t(m_v4f.z), int64_t(m_v4f.w)));
 						break;
 					}
+
+					case PT_INT:
+						m_v4i.y = 0;
+					case PT_INT_V2:
+						m_v4i.z = 0;
+					case PT_INT_V3:
+						m_v4i.w = 0;
+						m_Type = PT_INT_V4;
+						break;
 
 					default:
 						break;
@@ -257,7 +339,7 @@ public:
 
 			case PT_REAL:
 			{
-				double f;
+				float f;
 				SetReal(AsReal(&f));
 				break;
 			}
@@ -268,9 +350,15 @@ public:
 				{
 					case PT_STRING:
 					{
-						double x, y;
-						_stscanf_s(m_s, _T("%lf,%lf"), &x, &y);
-						SetVec2R(props::TVec2R(x, y));
+						float x, y;
+						_stscanf_s(m_s, _T("%f,%f"), &x, &y);
+						SetVec2F(props::TVec2F(x, y));
+						break;
+					}
+
+					case PT_INT:
+					{
+						SetVec2F(props::TVec2F(float(m_i)));
 						break;
 					}
 
@@ -278,10 +366,12 @@ public:
 					case PT_INT_V3:
 					case PT_INT_V4:
 					{
-						SetVec2R(props::TVec2R(double(m_v2i.x), double(m_v2i.y)));
+						SetVec2F(props::TVec2F(float(m_v2i.x), float(m_v2i.y)));
 						break;
 					}
 
+					case PT_REAL:
+						m_v2f.y = 0;
 					case PT_REAL_V3:
 					case PT_REAL_V4:
 						m_Type = PT_REAL_V2;
@@ -299,19 +389,35 @@ public:
 				{
 					case PT_STRING:
 					{
-						double x, y, z;
-						_stscanf_s(m_s, _T("%lf,%lf,%lf"), &x, &y, &z);
-						SetVec3R(props::TVec3R(x, y, z));
+						float x, y, z;
+						_stscanf_s(m_s, _T("%f,%f,%f"), &x, &y, &z);
+						SetVec3F(props::TVec3F(x, y, z));
+						break;
+					}
+
+					case PT_INT:
+					{
+						SetVec3F(props::TVec3F(float(m_i)));
+						break;
+					}
+
+					case PT_INT_V2:
+					{
+						SetVec3F(props::TVec3F(float(m_v2i.x), float(m_v2i.y)));
 						break;
 					}
 
 					case PT_INT_V3:
 					case PT_INT_V4:
 					{
-						SetVec3R(props::TVec3R(double(m_v3i.x), double(m_v3i.y), double(m_v3i.z)));
+						SetVec3F(props::TVec3F(float(m_v3i.x), float(m_v3i.y), float(m_v3i.z)));
 						break;
 					}
 
+					case PT_REAL:
+						m_v3f.y = 0;
+					case PT_REAL_V2:
+						m_v3f.z = 0;
 					case PT_REAL_V4:
 						m_Type = PT_REAL_V3;
 						break;
@@ -328,17 +434,25 @@ public:
 				{
 					case PT_STRING:
 					{
-						double x, y, z, w;
-						_stscanf_s(m_s, _T("%lf,%lf,%lf,%lf"), &x, &y, &z, &w);
-						SetVec4R(props::TVec4R(x, y, z, w));
+						float x, y, z, w;
+						_stscanf_s(m_s, _T("%f,%f,%f,%f"), &x, &y, &z, &w);
+						SetVec4F(props::TVec4F(x, y, z, w));
 						break;
 					}
 
 					case PT_INT_V4:
 					{
-						SetVec4R(props::TVec4R(double(m_v4i.x), double(m_v4i.y), double(m_v4i.z), double(m_v4i.w)));
+						SetVec4F(props::TVec4F(float(m_v4i.x), float(m_v4i.y), float(m_v4i.z), float(m_v4i.w)));
 						break;
 					}
+
+					case PT_REAL:
+						m_v4f.y = 0;
+					case PT_REAL_V2:
+						m_v4f.z = 0;
+					case PT_REAL_V3:
+						m_v4f.w = 0;
+						break;
 
 					default:
 						break;
@@ -377,19 +491,19 @@ public:
 						break;
 
 					case PT_REAL:
-						bufsz = _sctprintf(_T("%lf"), m_r);
+						bufsz = _sctprintf(_T("%f"), m_f);
 						break;
 
 					case PT_REAL_V2:
-						bufsz = _sctprintf(_T("%lf,%lf"), m_v2r.x, m_v2r.y);
+						bufsz = _sctprintf(_T("%f,%f"), m_v2f.x, m_v2f.y);
 						break;
 
 					case PT_REAL_V3:
-						bufsz = _sctprintf(_T("%lf,%lf,%lf"), m_v3r.x, m_v3r.y, m_v3r.z);
+						bufsz = _sctprintf(_T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
 						break;
 
 					case PT_REAL_V4:
-						bufsz = _sctprintf(_T("%lf,%lf,%lf,%lf"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
+						bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
 						break;
 
 					case PT_GUID:
@@ -432,7 +546,7 @@ public:
 		return true;
 	}
 
-	virtual PROPERTY_ASPECT GetAspect()
+	virtual PROPERTY_ASPECT GetAspect() const
 	{
 		return m_Aspect;
 	}
@@ -444,66 +558,130 @@ public:
 
 	virtual void SetInt(int64_t val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_INT))
+			return;
+
 		Reset();
 
 		m_Type = PT_INT;
-		m_i = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_i = val;
+		else
+			*p_i = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetVec2I(const TVec2I &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_INT_V2))
+			return;
+
 		Reset();
 
 		m_Type = PT_INT_V2;
-		m_v2i = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v2i = val;
+		else
+			*p_v2i = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetVec3I(const TVec3I &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_INT_V3))
+			return;
+
 		Reset();
 
 		m_Type = PT_INT_V3;
-		m_v3i = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v3i = val;
+		else
+			*p_v3i = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetVec4I(const TVec4I &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_INT_V4))
+			return;
+
 		Reset();
 
 		m_Type = PT_INT_V4;
-		m_v4i = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v4i = val;
+		else
+			*p_v4i = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
-	virtual void SetReal(double val)
+	virtual void SetReal(float val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL))
+			return;
+
 		Reset();
 
 		m_Type = PT_REAL;
-		m_r = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_f = val;
+		else
+			*p_f = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
-	virtual void SetVec2R(const TVec2R &val)
+	virtual void SetVec2F(const TVec2F &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V2))
+			return;
+
 		Reset();
 
 		m_Type = PT_REAL_V2;
-		m_v2r = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v2f = val;
+		else
+			*p_v2f = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
-	virtual void SetVec3R(const TVec3R &val)
+	virtual void SetVec3F(const TVec3F &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V3))
+			return;
+
 		Reset();
 
 		m_Type = PT_REAL_V3;
-		m_v3r = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v3f = val;
+		else
+			*p_v3f = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
-	virtual void SetVec4R(const TVec4R &val)
+	virtual void SetVec4F(const TVec4F &val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V4))
+			return;
+
 		Reset();
 
 		m_Type = PT_REAL_V4;
-		m_v4r = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_v4f = val;
+		else
+			*p_v4f = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetString(const TCHAR *val)
@@ -515,22 +693,40 @@ public:
 		{
 			m_s = _tcsdup(val);
 		}
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetGUID(GUID val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_GUID))
+			return;
+
 		Reset();
 
 		m_Type = PT_GUID;
-		m_g = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_g = val;
+		else
+			*p_g = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetBool(bool val)
 	{
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_BOOLEAN))
+			return;
+
 		Reset();
 
 		m_Type = PT_BOOLEAN;
-		m_b = val;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_b = val;
+		else
+			*p_b = val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
 	virtual void SetEnumStrings(const TCHAR *strs)
@@ -584,6 +780,9 @@ public:
 		if (val < m_es->size())
 		{
 			m_e = val;
+
+			if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+
 			return true;
 		}
 
@@ -603,6 +802,9 @@ public:
 			if (!_tcsicmp(it->c_str(), s))
 			{
 				m_e = val;
+
+				if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+
 				return true;
 			}
 		}
@@ -701,25 +903,25 @@ public:
 
 			case PT_REAL_V2:
 			{
-				TVec2R tmp;
-				pprop->AsVec2R(&tmp);
-				SetVec2R(tmp);
+				TVec2F tmp;
+				pprop->AsVec2F(&tmp);
+				SetVec2F(tmp);
 				break;
 			}
 
 			case PT_REAL_V3:
 			{
-				TVec3R tmp;
-				pprop->AsVec3R(&tmp);
-				SetVec3R(tmp);
+				TVec3F tmp;
+				pprop->AsVec3F(&tmp);
+				SetVec3F(tmp);
 				break;
 			}
 
 			case PT_REAL_V4:
 			{
-				TVec4R tmp;
-				pprop->AsVec4R(&tmp);
-				SetVec4R(tmp);
+				TVec4F tmp;
+				pprop->AsVec4F(&tmp);
+				SetVec4F(tmp);
 				break;
 			}
 
@@ -754,11 +956,17 @@ public:
 				break;
 
 			case PT_INT:
-				*ret = m_i;
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_i;
+				else
+					*ret = *p_i;
 				break;
 
 			case PT_REAL:
-				*ret = (int64_t)(m_r);
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = (int64_t)(m_f);
+				else
+					*ret = (int64_t)(*p_f);
 				break;
 
 			case PT_GUID:
@@ -782,19 +990,34 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec2I(m_i, 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec2I(m_i, 0);
+					else
+						*ret = TVec2I(*p_i, 0);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec2I(int64_t(m_r), 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec2I(int64_t(m_f), 0);
+					else
+						*ret = TVec2I(int64_t(*p_f), 0);
+				}
 				break;
 
 			case PT_INT_V2:
 				if (ret)
-					*ret = m_v2i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2i;
+					else
+						*ret = *p_v2i;
+				}
 
-				return ret ? ret : &m_v2i;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v2i : p_v2i);
 
 				break;
 		}
@@ -811,24 +1034,44 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec3I(m_i, 0, 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec3I(m_i, 0, 0);
+					else
+						*ret = TVec3I(*p_i, 0, 0);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec3I(int64_t(m_r), 0, 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec3I(int64_t(m_f), 0, 0);
+					else
+						*ret = TVec3I(int64_t(*p_f), 0, 0);
+				}
 				break;
 
 			case PT_INT_V2:
 				if (ret)
-					*ret = m_v2i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2i;
+					else
+						*ret = *p_v2i;
+				}
 				break;
 
 			case PT_INT_V3:
 				if (ret)
-					*ret = m_v3i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v3i;
+					else
+						*ret = *p_v3i;
+				}
 
-				return ret ? ret : &m_v3i;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v3i : p_v3i);
 
 				break;
 		}
@@ -845,29 +1088,54 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec4I(m_i, 0, 0, 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec4I(m_i, 0, 0, 0);
+					else
+						*ret = TVec4I(*p_i, 0, 0, 0);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec4I(int64_t(m_r), 0, 0, 0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec4I(int64_t(m_f), 0, 0, 0);
+					else
+						*ret = TVec4I(int64_t(*p_f), 0, 0, 0);
+				}
 				break;
 
 			case PT_INT_V2:
 				if (ret)
-					*ret = m_v2i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2i;
+					else
+						*ret = *p_v2i;
+				}
 				break;
 
 			case PT_INT_V3:
 				if (ret)
-					*ret = m_v3i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v3i;
+					else
+						*ret = *p_v3i;
+				}
 				break;
 
 			case PT_INT_V4:
 				if (ret)
-					*ret = m_v4i;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v4i;
+					else
+						*ret = *p_v4i;
+				}
 
-				return ret ? ret : &m_v4i;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v4i : p_v4i);
 
 				break;
 		}
@@ -875,35 +1143,41 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual double AsReal(double *ret)
+	virtual float AsReal(float *ret)
 	{
-		double retval;
+		float retval;
 		if (!ret)
 			ret = &retval;
 
 		switch (m_Type)
 		{
 			case PT_STRING:
-				*ret = (double)_tstof(m_s);
+				*ret = (float)_tstof(m_s);
 				break;
 
 			case PT_INT:
-				*ret = (double)m_i;
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = (float)m_i;
+				else
+					*ret = (float)*p_i;
 				break;
 
 			case PT_REAL:
-				*ret = m_r;
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_f;
+				else
+					*ret = *p_f;
 				break;
 
 			case PT_GUID:
-				*ret = 0.0;
+				*ret = 0.0f;
 				break;
 		}
 
 		return *ret;
 	}
 
-	virtual const TVec2R *AsVec2R(TVec2R *ret)
+	virtual const TVec2F *AsVec2F(TVec2F *ret)
 	{
 		switch (m_Type)
 		{
@@ -912,19 +1186,34 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec2R(double(m_i), 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec2F(float(m_i), 0.0f);
+					else
+						*ret = TVec2F(float(*p_i), 0.0f);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec2R(m_r, 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec2F(m_f, 0.0f);
+					else
+						*ret = TVec2F(*p_f, 0.0f);
+				}
 				break;
 
 			case PT_REAL_V2:
 				if (ret)
-					*ret = m_v2r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2f;
+					else
+						*ret = *p_v2f;
+				}
 
-				return ret ? ret : &m_v2r;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v2f : p_v2f);
 
 				break;
 		}
@@ -932,7 +1221,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec3R *AsVec3R(TVec3R *ret)
+	virtual const TVec3F *AsVec3F(TVec3F *ret)
 	{
 		switch (m_Type)
 		{
@@ -941,24 +1230,44 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec3R(double(m_i), 0.0, 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec3F(float(m_i), 0.0f, 0.0f);
+					else
+						*ret = TVec3F(float(*p_i), 0.0f, 0.0f);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec3R(m_r, 0.0, 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec3F(m_f, 0.0f, 0.0f);
+					else
+						*ret = TVec3F(*p_f, 0.0f, 0.0f);
+				}
 				break;
 
 			case PT_REAL_V2:
 				if (ret)
-					*ret = m_v2r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2f;
+					else
+						*ret = *p_v2f;
+				}
 				break;
 
 			case PT_REAL_V3:
 				if (ret)
-					*ret = m_v3r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v3f;
+					else
+						*ret = *p_v3f;
+				}
 
-				return ret ? ret : &m_v3r;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v3f : p_v3f);
 
 				break;
 		}
@@ -966,7 +1275,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec4R *AsVec4R(TVec4R *ret)
+	virtual const TVec4F *AsVec4F(TVec4F *ret)
 	{
 		switch (m_Type)
 		{
@@ -975,29 +1284,54 @@ public:
 
 			case PT_INT:
 				if (ret)
-					*ret = TVec4R(double(m_i), 0.0, 0.0, 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec4F(float(m_i), 0.0f, 0.0f, 0.0f);
+					else
+						*ret = TVec4F(float(*p_i), 0.0f, 0.0f, 0.0f);
+				}
 				break;
 
 			case PT_REAL:
 				if (ret)
-					*ret = TVec4R(m_r, 0.0, 0.0, 0.0);
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = TVec4F(m_f, 0.0f, 0.0f, 0.0f);
+					else
+						*ret = TVec4F(*p_f, 0.0f, 0.0f, 0.0f);
+				}
 				break;
 
 			case PT_REAL_V2:
 				if (ret)
-					*ret = m_v2r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v2f;
+					else
+						*ret = *p_v2f;
+				}
 				break;
 
 			case PT_REAL_V3:
 				if (ret)
-					*ret = m_v3r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v3f;
+					else
+						*ret = *p_v3f;
+				}
 				break;
 
 			case PT_REAL_V4:
 				if (ret)
-					*ret = m_v4r;
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = m_v4f;
+					else
+						*ret = *p_v4f;
+				}
 
-				return ret ? ret : &m_v4r;
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v4f : p_v4f);
 
 				break;
 		}
@@ -1055,19 +1389,19 @@ public:
 					break;
 
 				case PT_REAL:
-					_sntprintf_s(ret, retsize, retsize, _T("%f"), m_r);
+					_sntprintf_s(ret, retsize, retsize, _T("%f"), m_f);
 					break;
 
 				case PT_REAL_V2:
-					_sntprintf_s(ret, retsize, retsize, _T("%f,%f"), m_v2r.x, m_v2r.y);
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f"), m_v2f.x, m_v2f.y);
 					break;
 
 				case PT_REAL_V3:
-					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f"), m_v3r.x, m_v3r.y, m_v3r.z);
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
 					break;
 
 				case PT_REAL_V4:
-					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f"), m_v4r.x, m_v4r.y, m_v4r.z, m_v4r.w);
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
 					break;
 
 				case PT_GUID:
@@ -1091,35 +1425,38 @@ public:
 
 		switch (m_Type)
 		{
-		case PT_STRING:
-		{
-			int d[11];
-			_sntscanf_s(m_s, _tcslen(m_s) * sizeof(TCHAR), _T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), &d[0], &d[1], &d[2],
-				&d[3], &d[4], &d[5], &d[6], &d[7], &d[8], &d[9], &d[10]);
+			case PT_STRING:
+			{
+				int d[11];
+				_sntscanf_s(m_s, _tcslen(m_s) * sizeof(TCHAR), _T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), &d[0], &d[1], &d[2],
+					&d[3], &d[4], &d[5], &d[6], &d[7], &d[8], &d[9], &d[10]);
 
-			ret->Data1 = d[0];
-			ret->Data2 = d[1];
-			ret->Data3 = d[2];
-			ret->Data4[0] = d[3];
-			ret->Data4[1] = d[4];
-			ret->Data4[2] = d[5];
-			ret->Data4[3] = d[6];
-			ret->Data4[4] = d[7];
-			ret->Data4[5] = d[8];
-			ret->Data4[6] = d[9];
-			ret->Data4[7] = d[10];
-			break;
-		}
+				ret->Data1 = d[0];
+				ret->Data2 = d[1];
+				ret->Data3 = d[2];
+				ret->Data4[0] = d[3];
+				ret->Data4[1] = d[4];
+				ret->Data4[2] = d[5];
+				ret->Data4[3] = d[6];
+				ret->Data4[4] = d[7];
+				ret->Data4[5] = d[8];
+				ret->Data4[6] = d[9];
+				ret->Data4[7] = d[10];
+				break;
+			}
 
-		case PT_INT:
-			break;
+			case PT_INT:
+				break;
 
-		case PT_REAL:
-			break;
+			case PT_REAL:
+				break;
 
-		case PT_GUID:
-			*ret = m_g;
-			break;
+			case PT_GUID:
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_g;
+				else
+					*ret = *p_g;
+				break;
 		}
 
 		return *ret;
@@ -1134,11 +1471,17 @@ public:
 
 		if (m_Type == PT_BOOLEAN)
 		{
-			*ret = m_b;
+			if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+				*ret = m_b;
+			else
+				*ret = *p_b;
 		}
 		else if (m_Type == PT_INT)
 		{
-			*ret = (m_i == 0) ? false : true;
+			if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+				*ret = (m_i == 0) ? false : true;
+			else
+				*ret = (*p_i == 0) ? false : true;
 		}
 
 		return *ret;
@@ -1168,7 +1511,7 @@ public:
 				break;
 
 			case PT_REAL:
-				sz += sizeof(double);
+				sz += sizeof(float);
 				break;
 
 			case PT_GUID:
@@ -1221,8 +1564,8 @@ public:
 				break;
 
 			case PT_REAL:
-				*((double *)buf) = m_r;
-				buf += sizeof(double);
+				*((float *)buf) = m_f;
+				buf += sizeof(float);
 				break;
 
 			case PT_GUID:
@@ -1284,8 +1627,8 @@ public:
 				break;
 
 			case PT_REAL:
-				m_r = *((double *)buf);
-				buf += sizeof(double);
+				m_f = *((float *)buf);
+				buf += sizeof(float);
 				break;
 
 			case PT_GUID:
@@ -1302,303 +1645,368 @@ public:
 };
 
 
-class CPropertySet : public IPropertySet
+CPropertySet::CPropertySet()
 {
-protected:
-	typedef ::std::deque<IProperty *> TPropertyArray;
-	TPropertyArray m_Props;
+	m_pListener = nullptr;
+}
 
-	typedef ::std::map<FOURCHARCODE, IProperty *> TPropertyMap;
-	typedef ::std::pair<FOURCHARCODE, IProperty *> TPropertyMapPair;
-	TPropertyMap m_mapProps;
+CPropertySet::~CPropertySet()
+{
+	DeleteAll();
+}
 
-public:
+void CPropertySet::Release()
+{
+	delete this;
+}
 
-	CPropertySet()
+
+IProperty *CPropertySet::CreateProperty(const TCHAR *propname, FOURCHARCODE propid)
+{
+	TPropertyMap::const_iterator pi = m_mapProps.find(propid);
+	if ((pi != m_mapProps.end()) && pi->second)
+		return pi->second;
+
+	CProperty *pprop = new CProperty(this);
+	if (pprop)
 	{
+		pprop->SetName(propname ? propname : _T(""));
+		pprop->SetID(propid);
+
+		AddProperty(pprop);
 	}
 
-	virtual ~CPropertySet()
+	return pprop;
+}
+
+
+IProperty *CPropertySet::CreateReferenceProperty(const TCHAR *propname, FOURCHARCODE propid, void *addr, IProperty::PROPERTY_TYPE type)
+{
+	// string and enum types are not allowed for reference properties
+	if ((type == IProperty::PT_NONE) || (type == IProperty::PT_STRING) || (type == IProperty::PT_ENUM) || (type >= IProperty::PT_NUMTYPES))
+		return nullptr;
+
+	// reference properties with duplicate IDs are not allowed
+	TPropertyMap::const_iterator pi = m_mapProps.find(propid);
+	if ((pi != m_mapProps.end()) && pi->second)
+		return pi->second;
+
+	CProperty *pprop = new CProperty(this);
+	if (!pprop)
+		return nullptr;
+
+	pprop->m_sName = propname;
+	pprop->m_ID = propid;
+	pprop->m_Flags.Set(PROPFLAG_REFERENCE | PROPFLAG_TYPELOCKED);
+	pprop->m_Type = type;
+
+	switch (type)
 	{
-		DeleteAll();
+		case IProperty::PROPERTY_TYPE::PT_INT:
+			pprop->p_i = (int64_t *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_INT_V2:
+			pprop->p_v2i = (TVec2I *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_INT_V3:
+			pprop->p_v3i = (TVec3I *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_INT_V4:
+			pprop->p_v4i = (TVec4I *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_REAL:
+			pprop->p_f = (float *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_REAL_V2:
+			pprop->p_v2f = (TVec2F *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_REAL_V3:
+			pprop->p_v3f = (TVec3F *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_REAL_V4:
+			pprop->p_v4f = (TVec4F *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_BOOLEAN:
+			pprop->p_b = (bool *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_GUID:
+			pprop->p_g = (GUID *)addr;
+			break;
 	}
 
-	virtual void Release()
+	AddProperty(pprop);
+
+	return pprop;
+}
+
+void CPropertySet::AddProperty(IProperty *pprop)
+{
+	if (!pprop)
+		return;
+
+	uint32_t propid = pprop->GetID();
+	m_mapProps.insert(TPropertyMapPair(propid, pprop));
+	m_Props.insert(m_Props.end(), pprop);
+}
+
+
+void CPropertySet::DeleteProperty(size_t idx)
+{
+	if (idx >= m_Props.size())
+		return;
+
+	IProperty *pprop = m_Props[idx];
+	if (pprop)
 	{
-		delete this;
+		TPropertyArray::iterator pia = m_Props.begin();
+		pia += idx;
+		m_Props.erase(pia);
+
+		TPropertyMap::iterator pim = m_mapProps.find(pprop->GetID());
+		m_mapProps.erase(pim);
+
+		pprop->Release();
 	}
+}
 
-	virtual IProperty *CreateProperty(const TCHAR *propname, FOURCHARCODE propid)
+void CPropertySet::DeletePropertyById(FOURCHARCODE propid)
+{
+	TPropertyMap::iterator j = m_mapProps.find(propid);
+	if (j != m_mapProps.end())
+		m_mapProps.erase(j);
+
+	TPropertyArray::const_iterator e = m_Props.end();
+	for (TPropertyArray::iterator i = m_Props.begin(); i != e; i++)
 	{
-		TPropertyMap::const_iterator pi = m_mapProps.find(propid);
-		if ((pi != m_mapProps.end()) && pi->second)
-			return pi->second;
+		IProperty *pprop = *i;
 
-		CProperty *pprop = new CProperty();
-		if (pprop)
+		if (pprop->GetID() == propid)
 		{
-			pprop->SetName(propname ? propname : _T(""));
-			pprop->SetID(propid);
-
-			AddProperty(pprop);
-		}
-
-		return pprop;
-	}
-
-	// Adds a new property to this property set
-	virtual void AddProperty(IProperty *pprop)
-	{
-		if (!pprop)
-			return;
-
-		uint32_t propid = pprop->GetID();
-		m_mapProps.insert(TPropertyMapPair(propid, pprop));
-		m_Props.insert(m_Props.end(), pprop);
-	}
-
-	virtual void DeleteProperty(size_t idx)
-	{
-		if (idx >= m_Props.size())
-			return;
-
-		IProperty *pprop = m_Props[idx];
-		if (pprop)
-		{
-			TPropertyArray::iterator pia = m_Props.begin();
-			pia += idx;
-			m_Props.erase(pia);
-
-			TPropertyMap::iterator pim = m_mapProps.find(pprop->GetID());
-			m_mapProps.erase(pim);
+			m_Props.erase(i);
 
 			pprop->Release();
+			break;
 		}
 	}
+}
 
-	virtual void DeletePropertyById(FOURCHARCODE propid)
+
+void CPropertySet::DeletePropertyByName(const TCHAR *propname)
+{
+	TPropertyArray::const_iterator e = m_Props.end();
+	for (TPropertyArray::iterator i = m_Props.begin(); i != e; i++)
 	{
-		TPropertyMap::iterator j = m_mapProps.find(propid);
-		if (j != m_mapProps.end())
-			m_mapProps.erase(j);
+		IProperty *pprop = *i;
 
-		TPropertyArray::const_iterator e = m_Props.end();
-		for (TPropertyArray::iterator i = m_Props.begin(); i != e; i++)
+		if (!_tcsicmp(pprop->GetName(), propname))
 		{
-			IProperty *pprop = *i;
+			TPropertyMap::iterator j = m_mapProps.find(pprop->GetID());
+			if (j != m_mapProps.end())
+				m_mapProps.erase(j);
 
-			if (pprop->GetID() == propid)
-			{
-				m_Props.erase(i);
+			m_Props.erase(i);
 
-				pprop->Release();
-				break;
-			}
-		}
-	}
-
-
-	virtual void DeletePropertyByName(const TCHAR *propname)
-	{
-		TPropertyArray::const_iterator e = m_Props.end();
-		for (TPropertyArray::iterator i = m_Props.begin(); i != e; i++)
-		{
-			IProperty *pprop = *i;
-
-			if (!_tcsicmp(pprop->GetName(), propname))
-			{
-				TPropertyMap::iterator j = m_mapProps.find(pprop->GetID());
-				if (j != m_mapProps.end())
-					m_mapProps.erase(j);
-
-				m_Props.erase(i);
-
-				pprop->Release();
-				return;
-			}
-		}
-	}
-
-
-	virtual void DeleteAll()
-	{
-		for (uint32_t i = 0; i < m_Props.size(); i++)
-		{
-			IProperty *pprop = m_Props[i];
 			pprop->Release();
+			return;
 		}
+	}
+}
 
-		m_Props.clear();
-		m_mapProps.clear();
+
+void CPropertySet::DeleteAll()
+{
+	for (uint32_t i = 0; i < m_Props.size(); i++)
+	{
+		IProperty *pprop = m_Props[i];
+		pprop->Release();
 	}
 
+	m_Props.clear();
+	m_mapProps.clear();
+}
 
-	virtual size_t GetPropertyCount() const
+
+size_t CPropertySet::GetPropertyCount() const
+{
+	return m_Props.size();
+}
+
+
+IProperty *CPropertySet::GetProperty(size_t idx) const
+{
+	if (idx < m_Props.size())
+		return m_Props[idx];
+
+	return NULL;
+}
+
+
+IProperty *CPropertySet::GetPropertyById(props::FOURCHARCODE propid) const
+{
+	TPropertyMap::const_iterator j = m_mapProps.find(propid);
+	if (j != m_mapProps.end())
+		return j->second;
+
+	return NULL;
+}
+
+
+IProperty *CPropertySet::GetPropertyByName(const TCHAR *propname) const
+{
+	TPropertyArray::const_iterator e = m_Props.end();
+	for (TPropertyArray::const_iterator i = m_Props.begin(); i != e; i++)
 	{
-		return m_Props.size();
+		IProperty *pprop = *i;
+
+		if (!_tcsicmp(pprop->GetName(), propname))
+			return pprop;
 	}
 
+	return NULL;
+}
 
-	virtual IProperty *GetProperty(size_t idx) const
+
+CPropertySet &CPropertySet::operator =(IPropertySet *propset)
+{
+	DeleteAll();
+
+	for (uint32_t i = 0; i < propset->GetPropertyCount(); i++)
 	{
-		if (idx < m_Props.size())
-			return m_Props[idx];
+		IProperty *pother = propset->GetProperty(i);
+		if (!pother)
+			continue;
 
-		return NULL;
+		IProperty *pnew = CreateProperty(pother->GetName(), pother->GetID());
+		if (pnew)
+			pnew->SetFromProperty(pother);
 	}
 
+	return *this;
+}
 
-	virtual IProperty *GetPropertyById(props::FOURCHARCODE propid) const
+
+CPropertySet &CPropertySet::operator +=(IPropertySet *propset)
+{
+	AppendPropertySet(propset);
+
+	return *this;
+}
+
+
+void CPropertySet::AppendPropertySet(const IPropertySet *propset)
+{
+	for (uint32_t i = 0; i < propset->GetPropertyCount(); i++)
 	{
-		TPropertyMap::const_iterator j = m_mapProps.find(propid);
-		if (j != m_mapProps.end())
-			return j->second;
+		IProperty *po = propset->GetProperty(i);
+		if (!po)
+			continue;
 
-		return NULL;
-	}
-
-
-	virtual IProperty *GetPropertyByName(const TCHAR *propname) const
-	{
-		TPropertyArray::const_iterator e = m_Props.end();
-		for (TPropertyArray::const_iterator i = m_Props.begin(); i != e; i++)
+		IProperty *pp = this->GetPropertyById(po->GetID());
+		if (!pp)
 		{
-			IProperty *pprop = *i;
-
-			if (!_tcsicmp(pprop->GetName(), propname))
-				return pprop;
+			pp = CreateProperty(po->GetName(), po->GetID());
 		}
 
-		return NULL;
+		if (pp)
+			pp->SetFromProperty(po);
+	}
+}
+
+bool CPropertySet::Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused) const
+{
+	size_t used = sizeof(short);
+
+	for (TPropertyMap::const_iterator it = m_mapProps.begin(), last_it = m_mapProps.end(); it != last_it; it++)
+	{
+		size_t pused = 0;
+		CProperty *p = (CProperty *)(it->second);
+		p->Serialize(mode, nullptr, 0, &pused);
+		used += pused;
 	}
 
+	if (amountused)
+		*amountused = used;
 
-	virtual CPropertySet &operator =(IPropertySet *propset)
+	if (used > bufsize)
+		return false;
+
+	*((short *)buf) = short(m_mapProps.size());
+	bufsize -= sizeof(short);
+	buf += sizeof(short);
+
+	for (TPropertyMap::const_iterator it = m_mapProps.begin(), last_it = m_mapProps.end(); it != last_it; it++)
 	{
-		DeleteAll();
-
-		for (uint32_t i = 0; i < propset->GetPropertyCount(); i++)
-		{
-			IProperty *pother = propset->GetProperty(i);
-			if (!pother)
-				continue;
-
-			IProperty *pnew = CreateProperty(pother->GetName(), pother->GetID());
-			if (pnew)
-				pnew->SetFromProperty(pother);
-		}
-
-		return *this;
-	}
-
-
-	virtual CPropertySet &operator +=(IPropertySet *propset)
-	{
-		AppendPropertySet(propset);
-
-		return *this;
-	}
-
-
-	virtual void AppendPropertySet(const IPropertySet *propset)
-	{
-		for (uint32_t i = 0; i < propset->GetPropertyCount(); i++)
-		{
-			IProperty *po = propset->GetProperty(i);
-			if (!po)
-				continue;
-
-			IProperty *pp = this->GetPropertyById(po->GetID());
-			if (!pp)
-			{
-				pp = CreateProperty(po->GetName(), po->GetID());
-
-				if (pp)
-					pp->SetFromProperty(po);
-			}
-		}
-	}
-
-	virtual bool Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused) const
-	{
-		size_t used = sizeof(short);
-
-		for (TPropertyMap::const_iterator it = m_mapProps.begin(), last_it = m_mapProps.end(); it != last_it; it++)
-		{
-			size_t pused = 0;
-			CProperty *p = (CProperty *)(it->second);
-			p->Serialize(mode, nullptr, 0, &pused);
-			used += pused;
-		}
-
-		if (amountused)
-			*amountused = used;
-
-		if (used > bufsize)
+		size_t pused = 0;
+		CProperty *p = (CProperty *)(it->second);
+		if (!p->Serialize(mode, buf, bufsize, &pused))
 			return false;
 
-		*((short *)buf) = short(m_mapProps.size());
-		bufsize -= sizeof(short);
-		buf += sizeof(short);
-
-		for (TPropertyMap::const_iterator it = m_mapProps.begin(), last_it = m_mapProps.end(); it != last_it; it++)
-		{
-			size_t pused = 0;
-			CProperty *p = (CProperty *)(it->second);
-			if (!p->Serialize(mode, buf, bufsize, &pused))
-				return false;
-
-			buf += pused;
-			bufsize -= pused;
-		}
-
-		return true;
+		buf += pused;
+		bufsize -= pused;
 	}
 
-	virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
+	return true;
+}
+
+bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
+{
+	if (!buf)
+		return false;
+
+	short numprops = *((short *)buf);
+	buf += sizeof(short);
+	bufsize -= sizeof(short);
+
+	size_t consumed;
+
+	for (short i = 0; i < numprops; i++)
 	{
-		if (!buf)
+		BYTE *tmp = buf;
+		tmp += sizeof(BYTE);	// serialize mode
+		FOURCHARCODE id = *((FOURCHARCODE *)tmp);
+
+		CProperty *p = (CProperty *)GetPropertyById(id);
+		if (!p)
+		{
+			p = new CProperty(this);
+			if (p)
+			{
+				p->SetID(id);
+				AddProperty(p);
+			}
+		}
+
+		if (!p || !p->Deserialize(buf, bufsize, &consumed))
 			return false;
 
-		short numprops = *((short *)buf);
-		buf += sizeof(short);
-		bufsize -= sizeof(short);
+		buf += consumed;
+		if (consumed < bufsize)
+			return false;
 
-		size_t consumed;
-
-		for (short i = 0; i < numprops; i++)
-		{
-			BYTE *tmp = buf;
-			tmp += sizeof(BYTE);	// serialize mode
-			FOURCHARCODE id = *((FOURCHARCODE *)tmp);
-
-			CProperty *p = (CProperty *)GetPropertyById(id);
-			if (!p)
-			{
-				p = new CProperty();
-				if (p)
-				{
-					p->SetID(id);
-					AddProperty(p);
-				}
-			}
-
-			if (!p || !p->Deserialize(buf, bufsize, &consumed))
-				return false;
-
-			buf += consumed;
-			if (consumed < bufsize)
-				return false;
-
-			bufsize -= consumed;
-		}
-
-		if (bytesconsumed)
-			*bytesconsumed = consumed;
-
-		return true;
+		bufsize -= consumed;
 	}
-};
+
+	if (bytesconsumed)
+		*bytesconsumed = consumed;
+
+	return true;
+}
+
+
+void CPropertySet::SetChangeListener(const IPropertyChangeListener *plistener)
+{
+	m_pListener = (IPropertyChangeListener *)plistener;
+}
+
 
 IPropertySet *IPropertySet::CreatePropertySet()
 {

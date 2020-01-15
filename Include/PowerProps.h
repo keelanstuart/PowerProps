@@ -87,7 +87,7 @@ namespace props
 	template <typename T> struct SVec2
 	{
 		SVec2() { x = y = 0; }
-		SVec2(T _x, T _y) { x = _x; y = _y; }
+		SVec2(T _x, T _y = 0) { x = _x; y = _y; }
 		SVec2(const SVec2<T> &v) { x = v.x; y = v.y; }
 
 		inline SVec2<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; return *this; }
@@ -116,7 +116,7 @@ namespace props
 	template <typename T> struct SVec3
 	{
 		SVec3() { x = y = z = 0; }
-		SVec3(T _x, T _y, T _z) { x = _x; y = _y; z = _z; }
+		SVec3(T _x, T _y = 0, T _z = 0) { x = _x; y = _y; z = _z; }
 		SVec3(const SVec3<T> &v) { x = v.x; y = v.y; z = v.z; }
 		SVec3(const SVec2<T> &v) { x = v.x; y = v.y; z = 0; }
 
@@ -142,7 +142,7 @@ namespace props
 	template <typename T> struct SVec4
 	{
 		SVec4() { x = y = z = w = 0; }
-		SVec4(T _x, T _y, T _z, T _w) { x = _x; y = _y; z = _z; w = _w; }
+		SVec4(T _x, T _y = 0, T _z = 0, T _w = 0) { x = _x; y = _y; z = _z; w = _w; }
 		SVec4(const SVec4<T> &v) { x = v.x; y = v.y; z = v.z; w = v.w; }
 		SVec4(const SVec3<T> &v) { x = v.x; y = v.y; z = v.z; w = 0; }
 		SVec4(const SVec2<T> &v) { x = v.x; y = v.y; z = w = 0; }
@@ -167,13 +167,12 @@ namespace props
 	typedef SVec2<int64_t> TVec2I;
 	typedef SVec3<int64_t> TVec3I;
 	typedef SVec4<int64_t> TVec4I;
-	typedef SVec2<double> TVec2R;
-	typedef SVec3<double> TVec3R;
-	typedef SVec4<double> TVec4R;
+	typedef SVec2<float> TVec2F;
+	typedef SVec3<float> TVec3F;
+	typedef SVec4<float> TVec4F;
 	typedef uint32_t FOURCHARCODE;
 
-	/// IProperty and IPropertySet are not integral to mqme, but are provided
-	/// as helpers for serializing and deserializing user data.
+	/// The interface for all properties
 	class IProperty
 	{
 	public:
@@ -259,27 +258,28 @@ namespace props
 		#define PROPFLAG_TYPELOCKED		(1 << props::IProperty::FLAG_SHIFT::FS_TYPELOCKED)
 
 
+		/// Frees any resources that may have been allocated by this property
 		virtual void Release() = NULL;
 
 		/// property name accessors
-		virtual const TCHAR *GetName() = NULL;
+		virtual const TCHAR *GetName() const = NULL;
 		virtual void SetName(const TCHAR *name) = NULL;
 
 		/// ID accessor methods
-		virtual FOURCHARCODE GetID() = NULL;
+		virtual FOURCHARCODE GetID() const = NULL;
 		virtual void SetID(FOURCHARCODE id) = NULL;
 
 		/// Flag accessor methods
 		virtual TFlags32 &Flags() = NULL;
 
 		/// Get the data type currently stored in this property
-		virtual PROPERTY_TYPE GetType() = NULL;
+		virtual PROPERTY_TYPE GetType() const = NULL;
 
 		/// Allows you to convert a property from one type to another
 		virtual bool ConvertTo(PROPERTY_TYPE newtype) = NULL;
 
 		/// Aspect accessor methods
-		virtual PROPERTY_ASPECT GetAspect() = NULL;
+		virtual PROPERTY_ASPECT GetAspect() const = NULL;
 		virtual void SetAspect(PROPERTY_ASPECT aspect = PA_GENERIC) = NULL;
 
 		/// Sets the data from another property
@@ -290,10 +290,10 @@ namespace props
 		virtual void SetVec2I(const TVec2I &val) = NULL;
 		virtual void SetVec3I(const TVec3I &val) = NULL;
 		virtual void SetVec4I(const TVec4I &val) = NULL;
-		virtual void SetReal(double val) = NULL;
-		virtual void SetVec2R(const TVec2R &val) = NULL;
-		virtual void SetVec3R(const TVec3R &val) = NULL;
-		virtual void SetVec4R(const TVec4R &val) = NULL;
+		virtual void SetReal(float val) = NULL;
+		virtual void SetVec2F(const TVec2F &val) = NULL;
+		virtual void SetVec3F(const TVec3F &val) = NULL;
+		virtual void SetVec4F(const TVec4F &val) = NULL;
 		virtual void SetString(const TCHAR *val) = NULL;
 		virtual void SetGUID(GUID val) = NULL;
 		virtual void SetBool(bool val) = NULL;
@@ -302,10 +302,10 @@ namespace props
 		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) = NULL;
 		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) = NULL;
 		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) = NULL;
-		virtual double AsReal(double *ret = nullptr) = NULL;
-		virtual const TVec2R *AsVec2R(TVec2R *ret = nullptr) = NULL;
-		virtual const TVec3R *AsVec3R(TVec3R *ret = nullptr) = NULL;
-		virtual const TVec4R *AsVec4R(TVec4R *ret = nullptr) = NULL;
+		virtual float AsReal(float *ret = nullptr) = NULL;
+		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) = NULL;
+		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) = NULL;
+		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) = NULL;
 		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 		virtual GUID AsGUID(GUID *ret = nullptr) = NULL;
 		virtual bool AsBool(bool *ret = nullptr) = NULL;
@@ -329,6 +329,15 @@ namespace props
 		virtual size_t GetMaxEnumVal() = NULL;
 	};
 
+	class IPropertySet;
+
+	/// Implement this class and register with an IPropertySet implementation to receive notifications when properties changes
+	class IPropertyChangeListener
+	{
+	public:
+
+		virtual void PropertyChanged(const IPropertySet *ppropset, const IProperty *pprop) = NULL;
+	};
 
 	class IPropertySet
 	{
@@ -339,8 +348,8 @@ namespace props
 		/// Creates a new property and adds it to this property set
 		virtual IProperty *CreateProperty(const TCHAR *propname, FOURCHARCODE propid) = NULL;
 
-		/// Adds a new property to this property set
-		virtual void AddProperty(IProperty *pprop) = NULL;
+		/// Creates a property that references data held elsewhere and adds it to this property set (only bool, number, guid, and vector types supported)
+		virtual IProperty *CreateReferenceProperty(const TCHAR *propname, FOURCHARCODE propid, void *addr, IProperty::PROPERTY_TYPE type) = NULL;
 
 		/// Deletes a property from this set, based on a given index...
 		virtual void DeleteProperty(size_t idx) = NULL;
@@ -376,6 +385,9 @@ namespace props
 		/// If successful, the return value will be true and the number of bytes
 		/// consumed will be reported, if desired
 		virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed) = NULL;
+
+		/// Register a change listener if you want to know when a property has changed
+		virtual void SetChangeListener(const IPropertyChangeListener *plistener) = NULL;
 
 		/// Creates an instance of the IPropertySet interface, allowing the user to add IProperty's to it
 		/// These can be serialized to a packet and distributed to a set of listeners. Imagination is the only limitation.
