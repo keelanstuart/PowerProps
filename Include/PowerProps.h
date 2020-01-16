@@ -65,6 +65,8 @@ namespace props
 
 		inline bool IsSet(T f) { return (((flags & f) == f) ? true : false); }
 
+		inline bool AnySet(T f) { return (((flags & f) != 0) ? true : false); }
+
 		inline SFlagset &operator =(T f) { flags = f; return *this; }
 
 		inline bool operator ==(T f) { return (f == flags); }
