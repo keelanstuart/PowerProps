@@ -188,10 +188,10 @@ namespace props
 			PT_INT_V2,			/// 2 Ints: x, y
 			PT_INT_V3,			/// 3 Ints: x, y, z
 			PT_INT_V4,			/// 4 Ints: x, y, z, w
-			PT_REAL,
-			PT_REAL_V2,
-			PT_REAL_V3,
-			PT_REAL_V4,
+			PT_FLOAT,
+			PT_FLOAT_V2,
+			PT_FLOAT_V3,
+			PT_FLOAT_V4,
 			PT_GUID,
 			PT_ENUM,
 			PT_BOOLEAN,
@@ -292,7 +292,7 @@ namespace props
 		virtual void SetVec2I(const TVec2I &val) = NULL;
 		virtual void SetVec3I(const TVec3I &val) = NULL;
 		virtual void SetVec4I(const TVec4I &val) = NULL;
-		virtual void SetReal(float val) = NULL;
+		virtual void SetFloat(float val) = NULL;
 		virtual void SetVec2F(const TVec2F &val) = NULL;
 		virtual void SetVec3F(const TVec3F &val) = NULL;
 		virtual void SetVec4F(const TVec4F &val) = NULL;
@@ -304,7 +304,7 @@ namespace props
 		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) = NULL;
 		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) = NULL;
 		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) = NULL;
-		virtual float AsReal(float *ret = nullptr) = NULL;
+		virtual float AsFloat(float *ret = nullptr) = NULL;
 		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) = NULL;
 		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) = NULL;
 		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) = NULL;

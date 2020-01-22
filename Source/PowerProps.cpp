@@ -232,15 +232,15 @@ public:
 						break;
 					}
 
-					case PT_REAL:
+					case PT_FLOAT:
 					{
 						SetVec2I(props::TVec2I(int64_t(m_v2f.x)));
 						break;
 					}
 
-					case PT_REAL_V2:
-					case PT_REAL_V3:
-					case PT_REAL_V4:
+					case PT_FLOAT_V2:
+					case PT_FLOAT_V3:
+					case PT_FLOAT_V4:
 					{
 						SetVec2I(props::TVec2I(int64_t(m_v2f.x), int64_t(m_v2f.y)));
 						break;
@@ -271,20 +271,20 @@ public:
 						break;
 					}
 
-					case PT_REAL:
+					case PT_FLOAT:
 					{
 						SetVec3I(props::TVec3I(int64_t(m_v3f.x)));
 						break;
 					}
 
-					case PT_REAL_V2:
+					case PT_FLOAT_V2:
 					{
 						SetVec3I(props::TVec3I(int64_t(m_v3f.x), int64_t(m_v3f.x)));
 						break;
 					}
 
-					case PT_REAL_V3:
-					case PT_REAL_V4:
+					case PT_FLOAT_V3:
+					case PT_FLOAT_V4:
 					{
 						SetVec3I(props::TVec3I(int64_t(m_v3f.x), int64_t(m_v3f.y), int64_t(m_v3f.z)));
 						break;
@@ -316,7 +316,7 @@ public:
 						break;
 					}
 
-					case PT_REAL_V4:
+					case PT_FLOAT_V4:
 					{
 						SetVec4I(props::TVec4I(int64_t(m_v4f.x), int64_t(m_v4f.y), int64_t(m_v4f.z), int64_t(m_v4f.w)));
 						break;
@@ -337,14 +337,14 @@ public:
 				break;
 			}
 
-			case PT_REAL:
+			case PT_FLOAT:
 			{
 				float f;
-				SetReal(AsReal(&f));
+				SetFloat(AsFloat(&f));
 				break;
 			}
 
-			case PT_REAL_V2:
+			case PT_FLOAT_V2:
 			{
 				switch (m_Type)
 				{
@@ -370,11 +370,11 @@ public:
 						break;
 					}
 
-					case PT_REAL:
+					case PT_FLOAT:
 						m_v2f.y = 0;
-					case PT_REAL_V3:
-					case PT_REAL_V4:
-						m_Type = PT_REAL_V2;
+					case PT_FLOAT_V3:
+					case PT_FLOAT_V4:
+						m_Type = PT_FLOAT_V2;
 						break;
 
 					default:
@@ -383,7 +383,7 @@ public:
 				break;
 			}
 
-			case PT_REAL_V3:
+			case PT_FLOAT_V3:
 			{
 				switch (m_Type)
 				{
@@ -414,12 +414,12 @@ public:
 						break;
 					}
 
-					case PT_REAL:
+					case PT_FLOAT:
 						m_v3f.y = 0;
-					case PT_REAL_V2:
+					case PT_FLOAT_V2:
 						m_v3f.z = 0;
-					case PT_REAL_V4:
-						m_Type = PT_REAL_V3;
+					case PT_FLOAT_V4:
+						m_Type = PT_FLOAT_V3;
 						break;
 
 					default:
@@ -428,7 +428,7 @@ public:
 				break;
 			}
 
-			case PT_REAL_V4:
+			case PT_FLOAT_V4:
 			{
 				switch (m_Type)
 				{
@@ -446,11 +446,11 @@ public:
 						break;
 					}
 
-					case PT_REAL:
+					case PT_FLOAT:
 						m_v4f.y = 0;
-					case PT_REAL_V2:
+					case PT_FLOAT_V2:
 						m_v4f.z = 0;
-					case PT_REAL_V3:
+					case PT_FLOAT_V3:
 						m_v4f.w = 0;
 						break;
 
@@ -490,19 +490,19 @@ public:
 						bufsz = _sctprintf(_T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
 						break;
 
-					case PT_REAL:
+					case PT_FLOAT:
 						bufsz = _sctprintf(_T("%f"), m_f);
 						break;
 
-					case PT_REAL_V2:
+					case PT_FLOAT_V2:
 						bufsz = _sctprintf(_T("%f,%f"), m_v2f.x, m_v2f.y);
 						break;
 
-					case PT_REAL_V3:
+					case PT_FLOAT_V3:
 						bufsz = _sctprintf(_T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
 						break;
 
-					case PT_REAL_V4:
+					case PT_FLOAT_V4:
 						bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
 						break;
 
@@ -620,14 +620,14 @@ public:
 		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
 	}
 
-	virtual void SetReal(float val)
+	virtual void SetFloat(float val)
 	{
-		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL))
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_FLOAT))
 			return;
 
 		Reset();
 
-		m_Type = PT_REAL;
+		m_Type = PT_FLOAT;
 		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 			m_f = val;
 		else
@@ -638,12 +638,12 @@ public:
 
 	virtual void SetVec2F(const TVec2F &val)
 	{
-		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V2))
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_FLOAT_V2))
 			return;
 
 		Reset();
 
-		m_Type = PT_REAL_V2;
+		m_Type = PT_FLOAT_V2;
 		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 			m_v2f = val;
 		else
@@ -654,12 +654,12 @@ public:
 
 	virtual void SetVec3F(const TVec3F &val)
 	{
-		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V3))
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_FLOAT_V3))
 			return;
 
 		Reset();
 
-		m_Type = PT_REAL_V3;
+		m_Type = PT_FLOAT_V3;
 		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 			m_v3f = val;
 		else
@@ -670,12 +670,12 @@ public:
 
 	virtual void SetVec4F(const TVec4F &val)
 	{
-		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_REAL_V4))
+		if (m_Flags.IsSet(PROPFLAG_TYPELOCKED) && (m_Type != PT_FLOAT_V4))
 			return;
 
 		Reset();
 
-		m_Type = PT_REAL_V4;
+		m_Type = PT_FLOAT_V4;
 		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 			m_v4f = val;
 		else
@@ -897,11 +897,11 @@ public:
 				break;
 			}
 
-			case PT_REAL:
-				SetReal(pprop->AsReal());
+			case PT_FLOAT:
+				SetFloat(pprop->AsFloat());
 				break;
 
-			case PT_REAL_V2:
+			case PT_FLOAT_V2:
 			{
 				TVec2F tmp;
 				pprop->AsVec2F(&tmp);
@@ -909,7 +909,7 @@ public:
 				break;
 			}
 
-			case PT_REAL_V3:
+			case PT_FLOAT_V3:
 			{
 				TVec3F tmp;
 				pprop->AsVec3F(&tmp);
@@ -917,7 +917,7 @@ public:
 				break;
 			}
 
-			case PT_REAL_V4:
+			case PT_FLOAT_V4:
 			{
 				TVec4F tmp;
 				pprop->AsVec4F(&tmp);
@@ -962,7 +962,7 @@ public:
 					*ret = *p_i;
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 					*ret = (int64_t)(m_f);
 				else
@@ -998,7 +998,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1042,7 +1042,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1096,7 +1096,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1143,7 +1143,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual float AsReal(float *ret)
+	virtual float AsFloat(float *ret)
 	{
 		float retval;
 		if (!ret)
@@ -1162,7 +1162,7 @@ public:
 					*ret = (float)*p_i;
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 					*ret = m_f;
 				else
@@ -1194,7 +1194,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1204,7 +1204,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V2:
+			case PT_FLOAT_V2:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1238,7 +1238,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1248,7 +1248,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V2:
+			case PT_FLOAT_V2:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1258,7 +1258,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V3:
+			case PT_FLOAT_V3:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1292,7 +1292,7 @@ public:
 				}
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1302,7 +1302,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V2:
+			case PT_FLOAT_V2:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1312,7 +1312,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V3:
+			case PT_FLOAT_V3:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1322,7 +1322,7 @@ public:
 				}
 				break;
 
-			case PT_REAL_V4:
+			case PT_FLOAT_V4:
 				if (ret)
 				{
 					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
@@ -1388,19 +1388,19 @@ public:
 					_sntprintf_s(ret, retsize, retsize, _T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
 					break;
 
-				case PT_REAL:
+				case PT_FLOAT:
 					_sntprintf_s(ret, retsize, retsize, _T("%f"), m_f);
 					break;
 
-				case PT_REAL_V2:
+				case PT_FLOAT_V2:
 					_sntprintf_s(ret, retsize, retsize, _T("%f,%f"), m_v2f.x, m_v2f.y);
 					break;
 
-				case PT_REAL_V3:
+				case PT_FLOAT_V3:
 					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
 					break;
 
-				case PT_REAL_V4:
+				case PT_FLOAT_V4:
 					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
 					break;
 
@@ -1448,7 +1448,7 @@ public:
 			case PT_INT:
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				break;
 
 			case PT_GUID:
@@ -1510,7 +1510,7 @@ public:
 				sz += sizeof(int64_t);
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				sz += sizeof(float);
 				break;
 
@@ -1563,7 +1563,7 @@ public:
 				buf += sizeof(int64_t);
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				*((float *)buf) = m_f;
 				buf += sizeof(float);
 				break;
@@ -1626,7 +1626,7 @@ public:
 				buf += sizeof(int64_t);
 				break;
 
-			case PT_REAL:
+			case PT_FLOAT:
 				m_f = *((float *)buf);
 				buf += sizeof(float);
 				break;
@@ -1718,19 +1718,19 @@ IProperty *CPropertySet::CreateReferenceProperty(const TCHAR *propname, FOURCHAR
 			pprop->p_v4i = (TVec4I *)addr;
 			break;
 
-		case IProperty::PROPERTY_TYPE::PT_REAL:
+		case IProperty::PROPERTY_TYPE::PT_FLOAT:
 			pprop->p_f = (float *)addr;
 			break;
 
-		case IProperty::PROPERTY_TYPE::PT_REAL_V2:
+		case IProperty::PROPERTY_TYPE::PT_FLOAT_V2:
 			pprop->p_v2f = (TVec2F *)addr;
 			break;
 
-		case IProperty::PROPERTY_TYPE::PT_REAL_V3:
+		case IProperty::PROPERTY_TYPE::PT_FLOAT_V3:
 			pprop->p_v3f = (TVec3F *)addr;
 			break;
 
-		case IProperty::PROPERTY_TYPE::PT_REAL_V4:
+		case IProperty::PROPERTY_TYPE::PT_FLOAT_V4:
 			pprop->p_v4f = (TVec4F *)addr;
 			break;
 
