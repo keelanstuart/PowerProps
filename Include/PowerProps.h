@@ -338,7 +338,7 @@ namespace props
 	{
 	public:
 
-		virtual void PropertyChanged(const IPropertySet *ppropset, const IProperty *pprop) = NULL;
+		virtual void PropertyChanged(const IProperty *pprop) = NULL;
 	};
 
 	class IPropertySet

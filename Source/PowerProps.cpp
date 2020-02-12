@@ -569,7 +569,7 @@ public:
 		else
 			*p_i = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec2I(const TVec2I &val)
@@ -585,7 +585,7 @@ public:
 		else
 			*p_v2i = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec3I(const TVec3I &val)
@@ -601,7 +601,7 @@ public:
 		else
 			*p_v3i = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec4I(const TVec4I &val)
@@ -617,7 +617,7 @@ public:
 		else
 			*p_v4i = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetFloat(float val)
@@ -633,7 +633,7 @@ public:
 		else
 			*p_f = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec2F(const TVec2F &val)
@@ -649,7 +649,7 @@ public:
 		else
 			*p_v2f = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec3F(const TVec3F &val)
@@ -665,7 +665,7 @@ public:
 		else
 			*p_v3f = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetVec4F(const TVec4F &val)
@@ -681,7 +681,7 @@ public:
 		else
 			*p_v4f = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetString(const TCHAR *val)
@@ -694,7 +694,7 @@ public:
 			m_s = _tcsdup(val);
 		}
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetGUID(GUID val)
@@ -710,7 +710,7 @@ public:
 		else
 			*p_g = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetBool(bool val)
@@ -726,7 +726,7 @@ public:
 		else
 			*p_b = val;
 
-		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual void SetEnumStrings(const TCHAR *strs)
@@ -781,7 +781,7 @@ public:
 		{
 			m_e = val;
 
-			if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+			if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 
 			return true;
 		}
@@ -803,7 +803,7 @@ public:
 			{
 				m_e = val;
 
-				if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(m_pOwner, this);
+				if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 
 				return true;
 			}
