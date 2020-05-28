@@ -37,6 +37,7 @@ using namespace props;
 
 
 #define PROPFLAG_REFERENCE		(1 << 31)
+#define PROPFLAG_ENUMPROVIDER	(1 << 30)
 
 
 class CPropertySet : public IPropertySet
@@ -102,7 +103,11 @@ public:
 				int64_t m_i, *p_i;
 				size_t m_e;
 			};
-			TStringDeque *m_es;
+			union
+			{
+				TStringDeque *m_es;
+				const IEnumProvider *m_pep;
+			};
 		};
 		TVec2I m_v2i, *p_v2i;
 		TVec3I m_v3i, *p_v3i;
@@ -155,12 +160,17 @@ public:
 		return m_Flags;
 	}
 
+	virtual IPropertySet *GetOwner() const
+	{
+		return m_pOwner;
+	}
+
 	virtual void Reset()
 	{
 		switch (m_Type)
 		{
 			case PT_ENUM:
-				if (m_es)
+				if (m_es && !m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
 				{
 					delete m_es;
 					m_es = nullptr;
@@ -729,11 +739,35 @@ public:
 		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
+	virtual void SetEnumProvider(const IEnumProvider *pep)
+	{
+		Reset();
+
+		m_Type = PT_ENUM;
+
+		if (pep)
+			m_Flags.Set(PROPFLAG_ENUMPROVIDER);
+		else
+			m_Flags.Clear(PROPFLAG_ENUMPROVIDER);
+
+		m_pep = pep;
+	}
+
+	virtual const IEnumProvider *GetEnumProvider() const
+	{
+		if ((m_Type == PT_ENUM) && (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER)))
+			return m_pep;
+
+		return nullptr;
+	}
+
 	virtual void SetEnumStrings(const TCHAR *strs)
 	{
 		Reset();
 
 		m_Type = PT_ENUM;
+
+		m_Flags.Clear(PROPFLAG_ENUMPROVIDER);
 
 		m_es = new TStringDeque();
 		if (!m_es)
@@ -775,31 +809,25 @@ public:
 		if (m_Type != PT_ENUM)
 			return false;
 
-		assert(m_es);
-
-		if (val < m_es->size())
+		if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
 		{
-			m_e = val;
+			if (!m_pep)
+				return false;
 
-			if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+			if (val < m_pep->GetNumValues(this))
+			{
+				m_e = val;
 
-			return true;
+				if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+
+				return true;
+			}
 		}
-
-		return false;
-	}
-
-	virtual bool SetEnumValByString(const TCHAR *s)
-	{
-		if (m_Type != PT_ENUM)
-			return false;
-
-		assert(m_es);
-
-		size_t val = 0;
-		for (TStringDeque::const_iterator it = m_es->cbegin(), last_it = m_es->cend(); it != last_it; it++, val++)
+		else
 		{
-			if (!_tcsicmp(it->c_str(), s))
+			assert(m_es);
+
+			if (val < m_es->size())
 			{
 				m_e = val;
 
@@ -812,24 +840,77 @@ public:
 		return false;
 	}
 
-	virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret, size_t retsize)
+	virtual bool SetEnumValByString(const TCHAR *s)
 	{
-		if ((m_Type == PT_ENUM) && (m_es != nullptr) && (idx < m_es->size()))
-		{
-			tstring &t = m_es->at(idx);
-			if (ret && retsize)
-			{
-				_tcsnccpy_s(ret, retsize, t.c_str(), retsize);
-				return ret;
-			}
+		if (m_Type != PT_ENUM)
+			return false;
 
-			return m_es->at(idx).c_str();
+		if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+		{
+			if (!m_pep)
+				return false;
+
+			for (size_t i = 0, maxi = m_pep->GetNumValues(this); i < maxi; i++)
+			{
+				if (!_tcsicmp(m_pep->GetValue(this, i), s))
+				{
+					m_e = i;
+
+					if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+
+					return true;
+				}
+			}
+		}
+		else
+		{
+			assert(m_es);
+
+			size_t val = 0;
+			for (TStringDeque::const_iterator it = m_es->cbegin(), last_it = m_es->cend(); it != last_it; it++, val++)
+			{
+				if (!_tcsicmp(it->c_str(), s))
+				{
+					m_e = val;
+
+					if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret, size_t retsize) const
+	{
+		if (m_Type == PT_ENUM)
+		{
+			if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+			{
+				if (m_pep && (idx < m_pep->GetNumValues(this)))
+				{
+					return m_pep->GetValue(this, idx, ret, retsize);
+				}
+			}
+			else if ((m_es != nullptr) && (idx < m_es->size()))
+			{
+				tstring &t = m_es->at(idx);
+				if (ret && retsize)
+				{
+					_tcsnccpy_s(ret, retsize, t.c_str(), retsize);
+					return ret;
+				}
+
+				return m_es->at(idx).c_str();
+			}
 		}
 
 		return nullptr;
 	}
 
-	virtual const TCHAR *GetEnumStrings(TCHAR *ret, size_t retsize)
+	virtual const TCHAR *GetEnumStrings(TCHAR *ret, size_t retsize) const
 	{
 		if (m_Type == PT_ENUM)
 		{
@@ -845,11 +926,20 @@ public:
 		return nullptr;
 	}
 
-	virtual size_t GetMaxEnumVal()
+	virtual size_t GetMaxEnumVal() const
 	{
-		if ((m_Type == PT_ENUM) && (m_es != nullptr))
+		if (m_Type == PT_ENUM)
 		{
-			return m_es->size();
+			if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+			{
+				if (m_pep)
+					return m_pep->GetNumValues(this);
+			}
+			else
+			{
+				if (m_es)
+					return m_es->size();
+			}
 		}
 
 		return 0;
@@ -862,6 +952,8 @@ public:
 			Reset();
 			return;
 		}
+
+		m_Flags.SetAll(pprop->Flags());
 
 		switch (pprop->GetType())
 		{
@@ -934,16 +1026,22 @@ public:
 				break;
 
 			case PT_ENUM:
-				SetEnumStrings(pprop->GetEnumStrings());
+				if (pprop->GetEnumProvider())
+				{
+					SetEnumProvider(pprop->GetEnumProvider());
+				}
+				else
+				{
+					SetEnumStrings(pprop->GetEnumStrings());
+				}
 				SetEnumVal((size_t)(pprop->AsInt()));
 				break;
 		}
 
-		m_Flags.SetAll(pprop->Flags());
 		SetAspect(pprop->GetAspect());
 	}
 
-	virtual int64_t AsInt(int64_t *ret)
+	virtual int64_t AsInt(int64_t *ret) const
 	{
 		int64_t retval;
 		if (!ret)
@@ -974,14 +1072,21 @@ public:
 				break;
 
 			case PT_ENUM:
-				*ret = m_e;
+				if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+				{
+					*ret = m_pep ? ((m_e >= m_pep->GetNumValues(this)) ? m_e : 0) : 0;
+				}
+				else
+				{
+					*ret = m_e;
+				}
 				break;
 		}
 
 		return *ret;
 	}
 
-	virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr)
+	virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) const
 	{
 		switch (m_Type)
 		{
@@ -1025,7 +1130,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr)
+	virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) const
 	{
 		switch (m_Type)
 		{
@@ -1079,7 +1184,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr)
+	virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) const
 	{
 		switch (m_Type)
 		{
@@ -1143,7 +1248,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual float AsFloat(float *ret)
+	virtual float AsFloat(float *ret) const
 	{
 		float retval;
 		if (!ret)
@@ -1177,7 +1282,7 @@ public:
 		return *ret;
 	}
 
-	virtual const TVec2F *AsVec2F(TVec2F *ret)
+	virtual const TVec2F *AsVec2F(TVec2F *ret) const
 	{
 		switch (m_Type)
 		{
@@ -1221,7 +1326,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec3F *AsVec3F(TVec3F *ret)
+	virtual const TVec3F *AsVec3F(TVec3F *ret) const
 	{
 		switch (m_Type)
 		{
@@ -1275,7 +1380,7 @@ public:
 		return ret ? ret : nullptr;
 	}
 
-	virtual const TVec4F *AsVec4F(TVec4F *ret)
+	virtual const TVec4F *AsVec4F(TVec4F *ret) const
 	{
 		switch (m_Type)
 		{
@@ -1349,10 +1454,26 @@ public:
 
 		if (m_Type == PT_ENUM)
 		{
-			if (!ret || (retsize == 0) && (m_e < m_es->size()))
-				return m_es->at(m_e).c_str();
+			if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+			{
+				if (m_pep)
+				{
+					if (!ret || (retsize == 0) && (m_e < m_pep->GetNumValues(this)))
+						return m_pep->GetValue(this, m_e, ret, retsize);
+					else
+						return m_s;
+				}
+			}
 			else
-				return m_s;
+			{
+				if (m_es)
+				{
+					if (!ret || (retsize == 0) && (m_e < m_es->size()))
+						return m_es->at(m_e).c_str();
+					else
+						return m_s;
+				}
+			}
 		}
 
 		if (retsize > 0)
@@ -1361,11 +1482,6 @@ public:
 			{
 				case PT_STRING:
 					_tcsncpy_s(ret, retsize, m_s ? m_s : _T(""), retsize);
-					break;
-
-				case PT_ENUM:
-					if (m_e < m_es->size())
-						_tcsncpy_s(ret, retsize, m_es->at(m_e).c_str(), retsize);
 					break;
 
 				case PT_BOOLEAN:
@@ -1414,7 +1530,7 @@ public:
 		return ret;
 	}
 
-	virtual GUID AsGUID(GUID *ret)
+	virtual GUID AsGUID(GUID *ret) const
 	{
 		GUID retval;
 
@@ -1462,7 +1578,7 @@ public:
 		return *ret;
 	}
 
-	virtual bool AsBool(bool *ret)
+	virtual bool AsBool(bool *ret) const
 	{
 		bool retval = false;
 
@@ -1487,7 +1603,7 @@ public:
 		return *ret;
 	}
 
-	virtual bool Serialize(SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused = NULL)
+	virtual bool Serialize(SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused = NULL) const
 	{
 		if (!m_Type || (m_Type >= PT_NUMTYPES))
 			return false;

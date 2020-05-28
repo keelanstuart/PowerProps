@@ -1,7 +1,7 @@
 /*
 PowerProps Library Source File
 
-Copyright © 2009-2019, Keelan Stuart. All rights reserved.
+Copyright © 2009-2020, Keelan Stuart. All rights reserved.
 
 PowerProps is a generic property library which one can use to maintain
 easily discoverable data in a number of types, as well as convert that
@@ -60,32 +60,33 @@ namespace props
 
 		inline void Clear(T f) { flags &= ~f; }
 
-		inline operator T() { return flags; }
-		inline T Get() { return flags; }
+		inline operator T() const { return flags; }
+		inline T Get() const { return flags; }
 
-		inline bool IsSet(T f) { return (((flags & f) == f) ? true : false); }
+		inline bool IsSet(T f) const { return (((flags & f) == f) ? true : false); }
 
-		inline bool AnySet(T f) { return (((flags & f) != 0) ? true : false); }
+		inline bool AnySet(T f) const { return (((flags & f) != 0) ? true : false); }
 
 		inline SFlagset &operator =(T f) { flags = f; return *this; }
 
-		inline bool operator ==(T f) { return (f == flags); }
+		inline bool operator ==(T f) const { return (f == flags); }
 
-		inline bool operator !=(T f) { return (f != flags); }
+		inline bool operator !=(T f) const { return (f != flags); }
 
-		inline T operator ^(T f) { return (flags ^ f); }
+		inline T operator ^(T f) const { return (flags ^ f); }
 		inline SFlagset &operator ^=(T f) { flags ^= f; return *this; }
 
-		inline T operator |(T f) { return (flags | f); }
+		inline T operator |(T f) const { return (flags | f); }
 		inline SFlagset &operator |=(T f) { flags |= f; return *this; }
 
-		inline T operator &(T f) { return (flags & f); }
+		inline T operator &(T f) const { return (flags & f); }
 		inline SFlagset &operator &=(T f) { flags &= f; return *this; }
 
 	protected:
 		T flags;
 	};
 
+	/// 2D vector template with a helper union for member aliasing
 	template <typename T> struct SVec2
 	{
 		SVec2() { x = y = 0; }
@@ -115,6 +116,7 @@ namespace props
 		};
 	};
 
+	/// 3D vector template with a helper union for member aliasing
 	template <typename T> struct SVec3
 	{
 		SVec3() { x = y = z = 0; }
@@ -141,6 +143,7 @@ namespace props
 		};
 	};
 
+	/// 4D vector template with a helper union for member aliasing
 	template <typename T> struct SVec4
 	{
 		SVec4() { x = y = z = w = 0; }
@@ -164,6 +167,9 @@ namespace props
 		};
 	};
 
+
+	typedef SFlagset<uint8_t> TFlags8;
+	typedef SFlagset<uint16_t> TFlags16;
 	typedef SFlagset<uint32_t> TFlags32;
 	typedef SFlagset<uint64_t> TFlags64;
 	typedef SVec2<int64_t> TVec2I;
@@ -174,9 +180,13 @@ namespace props
 	typedef SVec4<float> TVec4F;
 	typedef uint32_t FOURCHARCODE;
 
+	class IPropertySet;
+
+
 	/// The interface for all properties
 	class IProperty
 	{
+
 	public:
 
 		enum PROPERTY_TYPE
@@ -259,6 +269,20 @@ namespace props
 		#define PROPFLAG_TOOLTIPITEM	(1 << props::IProperty::FLAG_SHIFT::FS_TOOLTIPITEM)
 		#define PROPFLAG_TYPELOCKED		(1 << props::IProperty::FLAG_SHIFT::FS_TYPELOCKED)
 
+		/// Implement an IEnumProvider to dynamically supply an IProperty with enum string values
+		class IEnumProvider
+		{
+
+		public:
+
+			/// Returns the number of string values that this enum provider has
+			virtual size_t GetNumValues(const IProperty *pprop) const = NULL;
+
+			/// Returns the enum string that corresponds to the given ordinal
+			/// If buf is supplied, the string will be copied into buf and returned to the caller, given bufsize as a limitation
+			virtual const TCHAR *GetValue(const IProperty *pprop, size_t ordinal, TCHAR *buf = nullptr, size_t bufsize = 0) const = NULL;
+
+		};
 
 		/// Frees any resources that may have been allocated by this property
 		virtual void Release() = NULL;
@@ -300,17 +324,23 @@ namespace props
 		virtual void SetGUID(GUID val) = NULL;
 		virtual void SetBool(bool val) = NULL;
 
-		virtual int64_t AsInt(int64_t *ret = nullptr) = NULL;
-		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) = NULL;
-		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) = NULL;
-		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) = NULL;
-		virtual float AsFloat(float *ret = nullptr) = NULL;
-		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) = NULL;
-		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) = NULL;
-		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) = NULL;
+		virtual int64_t AsInt(int64_t *ret = nullptr) const = NULL;
+		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) const = NULL;
+		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) const = NULL;
+		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) const = NULL;
+		virtual float AsFloat(float *ret = nullptr) const = NULL;
+		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) const = NULL;
+		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) const = NULL;
+		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) const = NULL;
 		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
-		virtual GUID AsGUID(GUID *ret = nullptr) = NULL;
-		virtual bool AsBool(bool *ret = nullptr) = NULL;
+		virtual GUID AsGUID(GUID *ret = nullptr) const = NULL;
+		virtual bool AsBool(bool *ret = nullptr) const = NULL;
+
+		/// Instead of providing a comma-delimited enum string, you can optionally provide an IEnumProvider to return enum values
+		virtual void SetEnumProvider(const IEnumProvider *pep) = NULL;
+
+		/// Indicates that this property has a dynamic enum provider
+		virtual const IEnumProvider *GetEnumProvider() const = NULL;
 
 		/// Sets the individual enumeration string values from a comma-delimited string
 		virtual void SetEnumStrings(const TCHAR *strs) = NULL;
@@ -322,27 +352,33 @@ namespace props
 		virtual bool SetEnumValByString(const TCHAR *s) = NULL;
 
 		/// Returns an individual enumerated string by index
-		virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
+		virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 
 		/// Returns the entire, comma-delimited string for an enumeration. Returns nullptr if not an enum property
-		virtual const TCHAR *GetEnumStrings(TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
+		virtual const TCHAR *GetEnumStrings(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 
 		/// Returns the maximum allowed value for an enum
-		virtual size_t GetMaxEnumVal() = NULL;
+		virtual size_t GetMaxEnumVal() const = NULL;
+
+		/// Returns the owner of this IProperty
+		virtual IPropertySet *GetOwner() const = NULL;
+
 	};
 
-	class IPropertySet;
 
 	/// Implement this class and register with an IPropertySet implementation to receive notifications when properties changes
 	class IPropertyChangeListener
 	{
+
 	public:
 
 		virtual void PropertyChanged(const IProperty *pprop) = NULL;
+
 	};
 
 	class IPropertySet
 	{
+
 	public:
 
 		virtual void Release() = NULL;
@@ -395,6 +431,7 @@ namespace props
 		/// These can be serialized to a packet and distributed to a set of listeners. Imagination is the only limitation.
 		/// (Only included as an example, use or not, with discretion)
 		POWERPROPS_API static IPropertySet *CreatePropertySet();
+
 	};
 
 };
