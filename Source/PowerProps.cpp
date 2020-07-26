@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include "stdafx.h"
 #include <PowerProps.h>
+#include <GenIO.h>
 
 
 using namespace props;
@@ -69,12 +70,16 @@ public:
 	virtual size_t GetPropertyCount() const;
 	virtual IProperty *GetProperty(size_t idx) const;
 	virtual IProperty *GetPropertyById(props::FOURCHARCODE propid) const;
+	virtual IProperty *operator [](FOURCHARCODE propid) const { return GetPropertyById(propid); }
 	virtual IProperty *GetPropertyByName(const TCHAR *propname) const;
+	virtual IProperty *operator [](const TCHAR *propname) const { return GetPropertyByName(propname); }
 	virtual CPropertySet &operator =(IPropertySet *propset);
 	virtual CPropertySet &operator +=(IPropertySet *propset);
 	virtual void AppendPropertySet(const IPropertySet *propset);
 	virtual bool Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused) const;
 	virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed);
+	virtual bool SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring &xmls) const;
+	virtual bool DeserializeFromXMLString(const tstring &xmls);
 	virtual void SetChangeListener(const IPropertyChangeListener *plistener);
 };
 
@@ -133,6 +138,68 @@ public:
 	virtual ~CProperty()
 	{
 		Reset();
+	}
+
+	size_t RequiredStringLength()
+	{
+		int32_t bufsz = 0;
+
+		switch (m_Type)
+		{
+			case PT_ENUM:
+				// the length of each string plus one character... commas for internal delimiters, colon for last, followed by number
+				bufsz = _sctprintf(_T("%I64d"), m_e);
+				for (TStringDeque::const_iterator it = m_es->cbegin(); it != m_es->cend(); it++)
+					bufsz += _sctprintf(_T("%s"), it->c_str()) + 1;
+				break;
+
+			case PT_STRING:
+				bufsz = _sctprintf(_T("%s"), m_s);
+				break;
+
+			case PT_BOOLEAN:
+				bufsz = _sctprintf(_T("%d"), m_b);
+				break;
+
+			case PT_INT:
+				bufsz = _sctprintf(_T("%I64d"), m_i);
+				break;
+
+			case PT_INT_V2:
+				bufsz = _sctprintf(_T("%I64d,%I64d"), m_v2i.x, m_v2i.y);
+				break;
+
+			case PT_INT_V3:
+				bufsz = _sctprintf(_T("%I64d,%I64d,%I64d"), m_v3i.x, m_v3i.y, m_v3i.z);
+				break;
+
+			case PT_INT_V4:
+				bufsz = _sctprintf(_T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
+				break;
+
+			case PT_FLOAT:
+				bufsz = _sctprintf(_T("%f"), m_f);
+				break;
+
+			case PT_FLOAT_V2:
+				bufsz = _sctprintf(_T("%f,%f"), m_v2f.x, m_v2f.y);
+				break;
+
+			case PT_FLOAT_V3:
+				bufsz = _sctprintf(_T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
+				break;
+
+			case PT_FLOAT_V4:
+				bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
+				break;
+
+			case PT_GUID:
+				bufsz = _sctprintf(_T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), m_g.Data1, m_g.Data2, m_g.Data3,
+								   m_g.Data4[0], m_g.Data4[1], m_g.Data4[2], m_g.Data4[3], m_g.Data4[4], m_g.Data4[5], m_g.Data4[6], m_g.Data4[7]);
+				break;
+		}
+
+		return bufsz + 1;
 	}
 
 	virtual const TCHAR *GetName() const
@@ -216,10 +283,8 @@ public:
 		{
 			case PT_BOOLEAN:
 			{
-				if (!_tcsicmp(m_s, _T("0")) || !_tcsicmp(m_s, _T("false")) || !_tcsicmp(m_s, _T("no")) || !_tcsicmp(m_s, _T("off")))
-					SetBool(false);
-				else if (!_tcsicmp(m_s, _T("1")) || !_tcsicmp(m_s, _T("true")) || !_tcsicmp(m_s, _T("yes")) || !_tcsicmp(m_s, _T("on")))
-					SetBool(true);
+				bool b;
+				SetBool(AsBool(&b));
 				break;
 			}
 
@@ -236,9 +301,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						int64_t x, y;
-						_stscanf_s(m_s, _T("%I64d,%I64d"), &x, &y);
-						SetVec2I(props::TVec2I(x, y));
+						TVec2I v;
+						AsVec2I(&v);
+						SetVec2I(v);
 						break;
 					}
 
@@ -275,9 +340,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						int64_t x, y, z;
-						_stscanf_s(m_s, _T("%I64d,%I64d,%I64d"), &x, &y, &z);
-						SetVec3I(props::TVec3I(x, y, z));
+						TVec3I v;
+						AsVec3I(&v);
+						SetVec3I(v);
 						break;
 					}
 
@@ -320,9 +385,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						int64_t x, y, z, w;
-						_stscanf_s(m_s, _T("%I64d,%I64d,%I64d,%I64d"), &x, &y, &z, &w);
-						SetVec4I(props::TVec4I(x, y, z, w));
+						TVec4I v;
+						AsVec4I(&v);
+						SetVec4I(v);
 						break;
 					}
 
@@ -360,9 +425,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						float x, y;
-						_stscanf_s(m_s, _T("%f,%f"), &x, &y);
-						SetVec2F(props::TVec2F(x, y));
+						TVec2F v;
+						AsVec2F(&v);
+						SetVec2F(v);
 						break;
 					}
 
@@ -399,9 +464,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						float x, y, z;
-						_stscanf_s(m_s, _T("%f,%f,%f"), &x, &y, &z);
-						SetVec3F(props::TVec3F(x, y, z));
+						TVec3F v;
+						AsVec3F(&v);
+						SetVec3F(v);
 						break;
 					}
 
@@ -444,9 +509,9 @@ public:
 				{
 					case PT_STRING:
 					{
-						float x, y, z, w;
-						_stscanf_s(m_s, _T("%f,%f,%f,%f"), &x, &y, &z, &w);
-						SetVec4F(props::TVec4F(x, y, z, w));
+						TVec4F v;
+						AsVec4F(&v);
+						SetVec4F(v);
 						break;
 					}
 
@@ -472,55 +537,7 @@ public:
 
 			case PT_STRING:
 			{
-				int32_t bufsz = -1;
-
-				switch (m_Type)
-				{
-					case PT_STRING:
-						bufsz = _sctprintf(_T("%s"), m_s);
-						break;
-
-					case PT_BOOLEAN:
-						bufsz = _sctprintf(_T("%d"), m_b);
-						break;
-
-					case PT_INT:
-						bufsz = _sctprintf(_T("%I64d"), m_i);
-						break;
-
-					case PT_INT_V2:
-						bufsz = _sctprintf(_T("%I64d,%I64d"), m_v2i.x, m_v2i.y);
-						break;
-
-					case PT_INT_V3:
-						bufsz = _sctprintf(_T("%I64d,%I64d,%I64d"), m_v3i.x, m_v3i.y, m_v3i.z);
-						break;
-
-					case PT_INT_V4:
-						bufsz = _sctprintf(_T("%I64d,%I64d,%I64d,%I64d"), m_v4i.x, m_v4i.y, m_v4i.z, m_v4i.w);
-						break;
-
-					case PT_FLOAT:
-						bufsz = _sctprintf(_T("%f"), m_f);
-						break;
-
-					case PT_FLOAT_V2:
-						bufsz = _sctprintf(_T("%f,%f"), m_v2f.x, m_v2f.y);
-						break;
-
-					case PT_FLOAT_V3:
-						bufsz = _sctprintf(_T("%f,%f,%f"), m_v3f.x, m_v3f.y, m_v3f.z);
-						break;
-
-					case PT_FLOAT_V4:
-						bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
-						break;
-
-					case PT_GUID:
-						bufsz = _sctprintf(_T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), m_g.Data1, m_g.Data2, m_g.Data3,
-							m_g.Data4[0], m_g.Data4[1], m_g.Data4[2], m_g.Data4[3], m_g.Data4[4], m_g.Data4[5], m_g.Data4[6], m_g.Data4[7]);
-						break;
-				}
+				size_t bufsz = RequiredStringLength();
 
 				if (bufsz > 0)
 				{
@@ -547,6 +564,25 @@ public:
 			{
 				GUID g;
 				SetGUID(AsGUID(&g));
+				break;
+			}
+
+			case PT_ENUM:
+			{
+				if (m_Type == PT_STRING)
+				{
+					TCHAR *c = _tcsrchr(m_s, _T(':'));
+					size_t v = 0;
+					if (c)
+					{
+						*c = _T('\0');
+						c++;
+						v = _ttoi64(c);
+					}
+					tstring tmp = m_s;
+					SetEnumStrings(tmp.c_str());
+					SetEnumVal(v);
+				}
 				break;
 			}
 		}
@@ -1091,6 +1127,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%I64d,%I64d"), &ret->x, &ret->y);
 				break;
 
 			case PT_INT:
@@ -1135,6 +1172,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%I64d,%I64d,%I64d"), &ret->x, &ret->y, &ret->z);
 				break;
 
 			case PT_INT:
@@ -1189,6 +1227,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%I64d,%I64d,%I64d,%I64d"), &ret->x, &ret->y, &ret->z, &ret->w);
 				break;
 
 			case PT_INT:
@@ -1287,6 +1326,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%f,%f"), &ret->x, &ret->y);
 				break;
 
 			case PT_INT:
@@ -1331,6 +1371,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%f,%f,%f"), &ret->x, &ret->y, &ret->z);
 				break;
 
 			case PT_INT:
@@ -1385,6 +1426,7 @@ public:
 		switch (m_Type)
 		{
 			case PT_STRING:
+				_stscanf_s(m_s, _T("%f,%f,%f,%f"), &ret->x, &ret->y, &ret->z, &ret->w);
 				break;
 
 			case PT_INT:
@@ -1485,7 +1527,24 @@ public:
 					break;
 
 				case PT_BOOLEAN:
-					_sntprintf_s(ret, retsize, retsize, _T("%d"), m_b);
+					switch (m_Aspect)
+					{
+						case PA_BOOL_ONOFF:
+							_tcscpy_s(ret, retsize, m_b ? _T("on") : _T("off"));
+							break;
+						case PA_BOOL_YESNO:
+							_tcscpy_s(ret, retsize, m_b ? _T("yes") : _T("no"));
+							break;
+						case PA_BOOL_TRUEFALSE:
+							_tcscpy_s(ret, retsize, m_b ? _T("true") : _T("false"));
+							break;
+						case PA_BOOL_ABLED:
+							_tcscpy_s(ret, retsize, m_b ? _T("enabled") : _T("disabled"));
+							break;
+						default:
+							_tcscpy_s(ret, retsize, m_b ? _T("1") : _T("0"));
+							break;
+					}
 					break;
 
 				case PT_INT:
@@ -1598,6 +1657,13 @@ public:
 				*ret = (m_i == 0) ? false : true;
 			else
 				*ret = (*p_i == 0) ? false : true;
+		}
+		else if (m_Type == PT_STRING)
+		{
+			if (!_tcsicmp(m_s, _T("0")) || !_tcsicmp(m_s, _T("false")) || !_tcsicmp(m_s, _T("no")) || !_tcsicmp(m_s, _T("off")) || !_tcsicmp(m_s, _T("disabled")))
+				*ret = false;
+			else if (!_tcsicmp(m_s, _T("1")) || !_tcsicmp(m_s, _T("true")) || !_tcsicmp(m_s, _T("yes")) || !_tcsicmp(m_s, _T("on")) || !_tcsicmp(m_s, _T("enabled")))
+				*ret = true;
 		}
 
 		return *ret;
@@ -2121,6 +2187,443 @@ bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
 void CPropertySet::SetChangeListener(const IPropertyChangeListener *plistener)
 {
 	m_pListener = (IPropertyChangeListener *)plistener;
+}
+
+namespace props
+{
+
+void UnescapeString(const TCHAR *in, tstring &out)
+{
+	out.clear();
+	out.reserve(_tcslen(in));
+	const TCHAR *c = in;
+	while (c && *c)
+	{
+		if (*c == _T('&'))
+		{
+			if (!memcmp(c, _T("&lt;"), sizeof(TCHAR) * 4))
+			{
+				out += _T('<');
+				c += 3;
+			}
+			else if (!memcmp(c, _T("&gt;"), sizeof(TCHAR) * 4))
+			{
+				out += _T('>');
+				c += 3;
+			}
+			else if (!memcmp(c, _T("&amp;"), sizeof(TCHAR) * 5))
+			{
+				out += _T('&');
+				c += 4;
+			}
+			else if (!memcmp(c, _T("&quot;"), sizeof(TCHAR) * 6))
+			{
+				out += _T('\"');
+				c += 5;
+			}
+		}
+		else
+			out += *c;
+
+		c++;
+	}
+}
+
+void EscapeString(const TCHAR *in, tstring &out)
+{
+	out.clear();
+	out.reserve(_tcslen(in) * 2);
+	const TCHAR *c = in;
+	while (c && *c)
+	{
+		switch (*c)
+		{
+			case _T('<'):
+			{
+				out += _T("&lt;");
+				break;
+			}
+			case _T('>'):
+			{
+				out += _T("&gt;");
+				break;
+			}
+			case _T('&'):
+			{
+				out += _T("&amp;");
+				break;
+			}
+			case _T('\"'):
+			{
+				out += _T("&quot;");
+				break;
+			}
+			default:
+			{
+				out += *c;
+				break;
+			}
+		};
+
+		c++;
+	}
+}
+
+};
+
+bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring &xmls) const
+{
+	xmls.clear();
+
+	// reserve 16K for the string
+	xmls.reserve(1 << 14);
+
+	xmls += _T("<powerprops:property_set>\n");
+
+	for (TPropertyMap::const_iterator it = m_mapProps.cbegin(); it != m_mapProps.cend(); it++)
+	{
+		if (!it->second)
+			continue;
+
+		xmls += _T("<powerprops:property ");
+
+		xmls += _T("id=\"");
+		FOURCHARCODE id = it->second->GetID();
+		uint8_t *pid = (uint8_t *)&id;
+
+		tstring idtemp;
+		for (size_t i = 0; i < 4; i++)
+		{
+			TCHAR c = pid[3 - i];
+			if (isalnum(c))
+			{
+				idtemp += c;
+			}
+			else
+			{
+				idtemp += _T("&#");
+				TCHAR num[8];
+				_itot_s(c, num, 10);
+				idtemp += num;
+				idtemp += _T(";");
+			}
+		}
+		xmls += idtemp;
+		xmls += _T("\"");
+
+		if (mode > props::IProperty::SERIALIZE_MODE::SM_BIN_TERSE)
+		{
+			xmls += _T(" name=\"");
+			tstring _name = it->second->GetName(), name;
+			props::EscapeString(_name.c_str(), name);
+			xmls += name;
+			xmls += _T("\"");
+		}
+
+		xmls += _T(" type=\"");
+		switch (it->second->GetType())
+		{
+			case props::IProperty::PROPERTY_TYPE::PT_BOOLEAN:
+				xmls += _T("BOOLEAN");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_ENUM:
+				xmls += _T("ENUM");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_FLOAT:
+				xmls += _T("FLOAT");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_FLOAT_V2:
+				xmls += _T("FLOAT_V2");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_FLOAT_V3:
+				xmls += _T("FLOAT_V3");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_FLOAT_V4:
+				xmls += _T("FLOAT_V4");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_GUID:
+				xmls += _T("GUID");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_INT:
+				xmls += _T("INT");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_INT_V2:
+				xmls += _T("INT_V2");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_INT_V3:
+				xmls += _T("INT_V3");
+				break;
+			case props::IProperty::PROPERTY_TYPE::PT_INT_V4:
+				xmls += _T("INT_V4");
+				break;
+			default:
+			case props::IProperty::PROPERTY_TYPE::PT_STRING:
+				xmls += _T("STRING");
+				break;
+		}
+		xmls += _T("\"");
+
+		if ((mode >= props::IProperty::SERIALIZE_MODE::SM_BIN_TERSE) && (it->second->GetAspect() != props::IProperty::PROPERTY_ASPECT::PA_GENERIC))
+		{
+			xmls += _T(" aspect=\"");
+			switch (it->second->GetAspect())
+			{
+				case props::IProperty::PROPERTY_ASPECT::PA_BOOL_ONOFF:
+					xmls += _T("BOOL_ONOFF");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_BOOL_YESNO:
+					xmls += _T("BOOL_YESNO");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_COLOR_RGB:
+					xmls += _T("COLOR_RGB");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_COLOR_RGBA:
+					xmls += _T("COLOR_RGBA");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_DATE:
+					xmls += _T("DATE");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_DIRECTORY:
+					xmls += _T("DIRECTORY");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_ELEVAZIM:
+					xmls += _T("ELEVAZIM");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_FILENAME:
+					xmls += _T("FILENAME");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_FONT_DESC:
+					xmls += _T("FONT_DESC");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_IPADDRESS:
+					xmls += _T("IP_ADDRESS");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_LATLON:
+					xmls += _T("LATLON");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_QUATERNION:
+					xmls += _T("QUATERNION");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_RASCDEC:
+					xmls += _T("RASCDEC");
+					break;
+				case props::IProperty::PROPERTY_ASPECT::PA_TIME:
+					xmls += _T("TIME");
+					break;
+				default:
+					TCHAR t[16];
+					_itot_s((int)(it->second->GetAspect()), t, 10);
+					xmls += t;
+					break;
+			}
+			xmls += _T("\"");
+		}
+
+		xmls += _T(">");
+
+		TCHAR _s[1 << 14];
+		if (it->second->GetType() != props::IProperty::PROPERTY_TYPE::PT_ENUM)
+		{
+			it->second->AsString(_s, _countof(_s));
+		}
+		else
+		{
+			it->second->GetEnumStrings(_s, _countof(_s));
+			TCHAR num[16];
+			_i64tot_s(it->second->AsInt(), num, _countof(num), 10);
+			_tcscat_s(_s, _T(":"));
+			_tcscat_s(_s, num);
+		}
+
+		tstring s;
+		props::EscapeString(_s, s);
+		xmls += s;
+
+		xmls += _T("</powerprops:property>\n");
+	}
+
+	xmls += _T("</powerprops:property_set>");
+
+	return true;
+}
+
+bool CPropertySet::DeserializeFromXMLString(const tstring &xmls)
+{
+	bool ret = false;
+
+	genio::IParserT *p = (genio::IParserT *)genio::IParser::Create(genio::IParser::CHAR_MODE::CM_TCHAR), *q = nullptr;
+	p->SetSourceData(xmls.c_str(), xmls.length());
+
+	while (p->NextToken())
+	{
+		if (p->IsToken(_T("<")))
+		{
+			p->NextToken();
+
+			// skip end tags and comments
+			if (p->IsToken(_T("/")) || p->IsToken(_T("!")))
+			{
+				p->ReadUntil(_T(">"), false, true);
+				continue;
+			}
+
+			// make sure the tags are pre-pended with "powerprops"
+			if (p->IsToken(_T("powerprops")))
+			{
+				p->NextToken();
+
+				if (!p->IsToken(_T(":")))
+					goto label_error;
+
+				p->NextToken();
+
+				// if it's a set, then skip it... ostensibly this is the opener
+				if (p->IsToken(_T("property_set")))
+					continue;
+
+				// if we got past the opener and it's not a property, then it's an error
+				if (!p->IsToken(_T("property")))
+					goto label_error;
+			}
+			else
+				goto label_error;
+
+			tstring propname, propid, proptype, propaspect;
+
+			// read the whole opening tag string
+			if (p->ReadUntil(_T(">"), false, true))
+			{
+				// create a new parser for the attributes
+				q = (genio::IParserT *)genio::IParser::Create(genio::IParser::CHAR_MODE::CM_TCHAR);
+				q->SetSourceData(p->GetCurrentTokenString(), _tcslen(p->GetCurrentTokenString()));
+
+				while (q->NextToken())
+				{
+					if (q->GetCurrentTokenType() != genio::IParser::TOKEN_TYPE::TT_IDENT)
+						goto label_error;
+
+					tstring attrib = q->GetCurrentTokenString();
+					q->NextToken();
+
+					if (!q->IsToken(_T("=")))
+						goto label_error;
+
+					q->NextToken();
+					if (q->GetCurrentTokenType() != genio::IParser::TOKEN_TYPE::TT_STRING)
+						goto label_error;
+
+					tstring attrib_val = q->GetCurrentTokenString();
+
+					if (!_tcsicmp(attrib.c_str(), _T("name")))
+					{
+						propname = q->GetCurrentTokenString();
+					}
+					else if (!_tcsicmp(attrib.c_str(), _T("id")))
+					{
+						propid = q->GetCurrentTokenString();
+					}
+					else if (!_tcsicmp(attrib.c_str(), _T("type")))
+					{
+						proptype = q->GetCurrentTokenString();
+						std::transform(proptype.begin(), proptype.end(), proptype.begin(), toupper);
+					}
+					else if (!_tcsicmp(attrib.c_str(), _T("aspect")))
+					{
+						propaspect = q->GetCurrentTokenString();
+						std::transform(propaspect.begin(), propaspect.end(), propaspect.begin(), toupper);
+					}
+					else
+						goto label_error;
+				}
+
+				q->Release();
+				q = nullptr;
+			}
+			else
+				goto label_error;
+
+			FOURCHARCODE fcc;
+			uint8_t *pid = (uint8_t *)&fcc;
+			const TCHAR *tid = propid.c_str();
+			for (size_t i = 0; i < 4; i++)
+			{
+				if (*tid == _T('&'))
+				{
+					TCHAR tmp[8], *_tmp = tmp;
+					for (size_t q = 0; (q < 7) && *tid && (*tid != _T(';')); q++)
+					{
+						*(_tmp++) = *(tid++);
+					}
+					*(_tmp++) = *(tid++);
+					*(_tmp++) = _T('\0');
+					_stscanf_s(tmp, _T("&#%hhu;"), &pid[3 - i]);
+				}
+				else
+				{
+					pid[3-i] = (uint8_t)(*(tid++));
+				}
+			}
+
+			props::IProperty *pp = GetPropertyById(fcc);
+
+			if (!pp && !propname.empty())
+				pp = GetPropertyByName(propname.c_str());
+
+			if (!pp)
+				pp = CreateProperty(propname.c_str(), fcc);
+
+			if (!pp)
+				goto label_error;
+
+			if (p->ReadUntil(_T("<"), false, true))
+			{
+				tstring v;
+				props::UnescapeString(p->GetCurrentTokenString(), v);
+				pp->SetString(v.c_str());
+
+				if (!_tcsicmp(proptype.c_str(), _T("BOOLEAN")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_BOOLEAN);
+				else if (!_tcsicmp(proptype.c_str(), _T("ENUM")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_ENUM);
+				else if (!_tcsicmp(proptype.c_str(), _T("FLOAT")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_FLOAT);
+				else if (!_tcsicmp(proptype.c_str(), _T("FLOAT_V2")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_FLOAT_V2);
+				else if (!_tcsicmp(proptype.c_str(), _T("FLOAT_V3")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_FLOAT_V3);
+				else if (!_tcsicmp(proptype.c_str(), _T("FLOAT_V4")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_FLOAT_V4);
+				else if (!_tcsicmp(proptype.c_str(), _T("GUID")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_GUID);
+				else if (!_tcsicmp(proptype.c_str(), _T("INT")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_INT);
+				else if (!_tcsicmp(proptype.c_str(), _T("INT_V2")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_INT_V2);
+				else if (!_tcsicmp(proptype.c_str(), _T("INT_V3")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_INT_V3);
+				else if (!_tcsicmp(proptype.c_str(), _T("INT_V4")))
+					pp->ConvertTo(props::IProperty::PROPERTY_TYPE::PT_INT_V4);
+			}
+		}
+	}
+
+	ret = true;
+
+// I'm not proud of using a goto, but for the first time in a long time, it makes sense... <shrug>
+label_error:
+	if (p)
+	{
+		p->Release();
+		p = nullptr;
+	}
+
+	if (q)
+	{
+		q->Release();
+		q = nullptr;
+	}
+
+	return ret;
 }
 
 

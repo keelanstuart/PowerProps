@@ -31,17 +31,18 @@ SOFTWARE.
 
 #pragma once
 
+#if !defined(POWERPROPS_STATIC)
 
-// The following ifdef block is the standard way of creating macros which make exporting 
-// from a DLL simpler. All files within this DLL are compiled with the POWERPROPS_EXPORTS
-// symbol defined on the command line. This symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see 
-// POWERPROPS_API functions as being imported from a DLL, whereas this DLL sees symbols
-// defined with this macro as being exported.
 #ifdef POWERPROPS_EXPORTS
 #define POWERPROPS_API __declspec(dllexport)
 #else
 #define POWERPROPS_API __declspec(dllimport)
+#endif
+
+#else
+
+#define POWERPROPS_API
+
 #endif
 
 namespace props
@@ -183,7 +184,9 @@ namespace props
 	class IPropertySet;
 
 
-	/// The interface for all properties
+	/// IProperty is a container for typed, sometimes convertible data. It provides methods to store and retreive
+	/// data and also allows a descriptor (aspect) to be given to it so that a normal string can be differentiated from
+	/// a filename, for example.
 	class IProperty
 	{
 
@@ -226,6 +229,8 @@ namespace props
 			PA_QUATERNION,		/// VEC4
 			PA_BOOL_ONOFF,		/// BOOL TYPE "on" "off"
 			PA_BOOL_YESNO,		/// BOOL TYPE "yes" "no"
+			PA_BOOL_TRUEFALSE,	/// BOOL TYPE "true" "false"
+			PA_BOOL_ABLED,		/// BOOL TYPE "enabled" "disabled"
 			PA_FONT_DESC,		/// STRING describes a font
 			PA_DATE,			/// STRING / INT (holds a time_t)
 			PA_TIME,			/// STRING / INT (holds a time_t)
@@ -241,9 +246,9 @@ namespace props
 		{
 			/// stores...
 
-			SM_BIN_VALUESONLY = 0,	/// (binary format) id, type, value
-			SM_BIN_TERSE,			/// (binary format) id, type, aspect, value
-			SM_BIN_VERBOSE,			/// (binary format) name, id, type, aspect, value
+			SM_BIN_VALUESONLY = 0,	/// id, type, value
+			SM_BIN_TERSE,			/// id, type, aspect, value
+			SM_BIN_VERBOSE,			/// name, id, type, aspect, value
 
 			SM_NUMMODES
 		};
@@ -311,7 +316,7 @@ namespace props
 		/// Sets the data from another property
 		virtual void SetFromProperty(IProperty *pprop) = NULL;
 
-		/// Sets the data
+		/// Sets the data, potentially changing the internal type
 		virtual void SetInt(int64_t val) = NULL;
 		virtual void SetVec2I(const TVec2I &val) = NULL;
 		virtual void SetVec3I(const TVec3I &val) = NULL;
@@ -324,6 +329,8 @@ namespace props
 		virtual void SetGUID(GUID val) = NULL;
 		virtual void SetBool(bool val) = NULL;
 
+		/// Returns the data in the requested form.
+		/// If the internal type does not match the type requested, a more complicated operation may happen under the hood
 		virtual int64_t AsInt(int64_t *ret = nullptr) const = NULL;
 		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) const = NULL;
 		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) const = NULL;
@@ -372,15 +379,18 @@ namespace props
 
 	public:
 
+		/// Called by a property set when one of it's properties has changed
 		virtual void PropertyChanged(const IProperty *pprop) = NULL;
 
 	};
 
+	/// IPropertySet is a container for IProperty instances, 
 	class IPropertySet
 	{
 
 	public:
 
+		/// Releases any resources the property set may have allocated
 		virtual void Release() = NULL;
 
 		/// Creates a new property and adds it to this property set
@@ -389,20 +399,22 @@ namespace props
 		/// Creates a property that references data held elsewhere and adds it to this property set (only bool, number, guid, and vector types supported)
 		virtual IProperty *CreateReferenceProperty(const TCHAR *propname, FOURCHARCODE propid, void *addr, IProperty::PROPERTY_TYPE type) = NULL;
 
-		/// Deletes a property from this set, based on a given index...
+		/// Deletes a property from this set, based on a given index
 		virtual void DeleteProperty(size_t idx) = NULL;
 
-		/// Deletes a property from this set, based on a given property id...
+		/// Deletes a property from this set, based on a given property id
 		virtual void DeletePropertyById(FOURCHARCODE propid) = NULL;
 
-		/// Deletes a property from this set, based on a given property name...
+		/// Deletes a property from this set, based on a given property name
 		virtual void DeletePropertyByName(const TCHAR *propname) = NULL;
 
-		/// Deletes all properties from this set...
+		/// Deletes all properties from this set
 		virtual void DeleteAll() = NULL;
 
+		/// Returns the number of properties in this set
 		virtual size_t GetPropertyCount() const = NULL;
 
+		/// Returns the property at the given index or nullptr if the index is out of range
 		virtual IProperty *GetProperty(size_t idx) const = NULL;
 
 		/// Gets a property from this set, given a property id
@@ -411,7 +423,11 @@ namespace props
 		/// Gets a property from this set, given a property name
 		virtual IProperty *GetPropertyByName(const TCHAR *propname) const = NULL;
 
-		/// Takes the properties from the given list and appends them to this set...
+		/// Indexing gets a property from this set, given a property id (FOURCHARCODE) or name (const TCHAR *)
+		virtual IProperty * operator[](FOURCHARCODE propid) const = NULL;
+		virtual IProperty * operator[](const TCHAR *propname) const = NULL;
+
+		/// Takes the properties from the given list and appends them to this set
 		virtual void AppendPropertySet(const IPropertySet *propset) = NULL;
 
 		/// Writes all properties to a binary stream
@@ -423,6 +439,18 @@ namespace props
 		/// If successful, the return value will be true and the number of bytes
 		/// consumed will be reported, if desired
 		virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed) = NULL;
+
+		/// <summary>
+		/// Writes all properties to an XML-formatted tstring in the verbose equivalent
+		/// </summary>
+		/// <param name="xmls">When the return value is true, will contain the XML fragment that represents all properties in the set</param>
+		virtual bool SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring &xmls) const = NULL;
+
+		/// <summary>
+		/// Reads all properties from an XML-formatted tstring
+		/// </summary>
+		/// <param name="xmls">an XML fragment that contains property data</param>
+		virtual bool DeserializeFromXMLString(const tstring &xmls) = NULL;
 
 		/// Register a change listener if you want to know when a property has changed
 		virtual void SetChangeListener(const IPropertyChangeListener *plistener) = NULL;
