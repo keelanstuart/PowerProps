@@ -1824,6 +1824,82 @@ public:
 
 		return (size_t(buf - origbuf) <= bufsize) ? true : false;
 	}
+
+	virtual bool IsSameAs(const IProperty *other_prop) const
+	{
+		if ((!other_prop) || (other_prop->GetID() != m_ID))
+			return false;
+
+		CProperty *p = (CProperty *)other_prop;
+
+		PROPERTY_TYPE other_type = p->GetType();
+
+		if (other_type != m_Type)
+			return false;
+
+		if ((other_type == PROPERTY_TYPE::PT_STRING) && _tcscmp(p->m_s, m_s))
+			return false;
+
+		switch (other_type)
+		{
+			case PROPERTY_TYPE::PT_BOOLEAN:
+				if (p->m_b != m_b)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_ENUM:
+				if (p->m_e != m_e)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_INT:
+				if (p->m_i != m_i)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT:
+				if (p->m_f != m_f)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT_V2:
+				if (p->m_v2f != m_v2f)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT_V3:
+				if (p->m_v3f != m_v3f)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT_V4:
+				if (p->m_v4f != m_v4f)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_INT_V2:
+				if (p->m_v2i != m_v2i)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_INT_V3:
+				if (p->m_v3i != m_v3i)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_INT_V4:
+				if (p->m_v4i != m_v4i)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_GUID:
+				if (p->m_g != m_g)
+					return false;
+				break;
+		}
+
+		return true;
+	}
 };
 
 

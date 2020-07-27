@@ -95,6 +95,8 @@ namespace props
 		SVec2(const SVec2<T> &v) { x = v.x; y = v.y; }
 
 		inline SVec2<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; return *this; }
+		inline bool operator ==(const SVec2<T> &o) { return ((o.x == x) && (o.y == y)); }
+		inline bool operator !=(const SVec2<T> &o) { return !((o.x == x) && (o.y == y)); }
 
 		union
 		{
@@ -127,6 +129,8 @@ namespace props
 
 		inline SVec3<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; return *this; }
 		inline SVec3<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = 0; return *this; }
+		inline bool operator ==(const SVec3<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z)); }
+		inline bool operator !=(const SVec3<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z)); }
 
 		union
 		{
@@ -156,6 +160,8 @@ namespace props
 		inline SVec4<T> &operator =(const SVec4<T> &o) { x = o.x; y = o.y; z = o.z; w = o.w; return *this; }
 		inline SVec4<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; w = 0; return *this; }
 		inline SVec4<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = w = 0; return *this; }
+		inline bool operator ==(const SVec4<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
+		inline bool operator !=(const SVec4<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
 
 		union
 		{
@@ -369,6 +375,9 @@ namespace props
 
 		/// Returns the owner of this IProperty
 		virtual IPropertySet *GetOwner() const = NULL;
+
+		/// Returns true if the value of this property matches that of the given property
+		virtual bool IsSameAs(const IProperty *other_prop) const = NULL;
 
 	};
 
