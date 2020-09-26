@@ -1089,6 +1089,13 @@ public:
 				*ret = m_s ? (int64_t)_tstoi64(m_s) : 0;
 				break;
 
+			case PT_BOOLEAN:
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_b ? 1 : 0;
+				else
+					*ret = *p_b ? 1 : 0;
+				break;
+
 			case PT_INT:
 				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
 					*ret = m_i;
@@ -1297,6 +1304,13 @@ public:
 		{
 			case PT_STRING:
 				*ret = (float)_tstof(m_s);
+				break;
+
+			case PT_BOOLEAN:
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_b ? 1.0f : 0.0f;
+				else
+					*ret = *p_b ? 1.0f : 0.0f;
 				break;
 
 			case PT_INT:
