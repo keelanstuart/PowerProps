@@ -1,7 +1,7 @@
 /*
 PowerProps Library Source File
 
-Copyright © 2009-2020, Keelan Stuart. All rights reserved.
+Copyright © 2009-2021, Keelan Stuart. All rights reserved.
 
 PowerProps is a generic property library which one can use to maintain
 easily discoverable data in a number of types, as well as convert that
@@ -148,7 +148,11 @@ public:
 		{
 			case PT_ENUM:
 				// the length of each string plus one character... commas for internal delimiters, colon for last, followed by number
+#if defined(_M_X64)
 				bufsz = _sctprintf(_T("%I64d"), m_e);
+#else
+				bufsz = _sctprintf(_T("%zd"), m_e);
+#endif
 				for (TStringDeque::const_iterator it = m_es->cbegin(); it != m_es->cend(); it++)
 					bufsz += _sctprintf(_T("%s"), it->c_str()) + 1;
 				break;
@@ -577,7 +581,11 @@ public:
 					{
 						*c = _T('\0');
 						c++;
+#if defined(_M_X64)
 						v = _ttoi64(c);
+#else
+						v = _ttoi(c);
+#endif
 					}
 					tstring tmp = m_s;
 					SetEnumStrings(tmp.c_str());
