@@ -1,48 +1,54 @@
 /*
-PowerProps Library Source File
 
-Copyright Â© 2009-2019, Keelan Stuart. All rights reserved.
+	PowerProps Library Source File
 
-PowerProps is a generic property library which one can use to maintain
-easily discoverable data in a number of types, as well as convert that
-data to other formats and de/serialize in multiple modes
+	Copyright © 2009-2021, Keelan Stuart. All rights reserved.
 
-PowerProps is free software; you can redistribute it and/or modify it under
-the terms of the MIT License:
+	PowerProps is a generic property library which one can use to maintain
+	easily discoverable data in a number of types, as well as convert that
+	data to other formats and de/serialize in multiple modes
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+	PowerProps is free software; you can redistribute it and/or modify it under
+	the terms of the MIT License:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
+
 */
 
 #pragma once
 
+// If you use the static library version of GenIO, you must define GENIO_STATIC in your project's preprocessor definitions
 
-// The following ifdef block is the standard way of creating macros which make exporting 
-// from a DLL simpler. All files within this DLL are compiled with the POWERPROPS_EXPORTS
-// symbol defined on the command line. This symbol should not be defined on any project
-// that uses this DLL. This way any other project whose source files include this file see 
-// POWERPROPS_API functions as being imported from a DLL, whereas this DLL sees symbols
-// defined with this macro as being exported.
+#if !defined(POWERPROPS_STATIC)
+
 #ifdef POWERPROPS_EXPORTS
 #define POWERPROPS_API __declspec(dllexport)
 #else
 #define POWERPROPS_API __declspec(dllimport)
 #endif
+
+#else
+
+#define POWERPROPS_API
+
+#endif
+
 
 namespace props
 {
@@ -60,32 +66,33 @@ namespace props
 
 		inline void Clear(T f) { flags &= ~f; }
 
-		inline operator T() { return flags; }
-		inline T Get() { return flags; }
+		inline operator T() const { return flags; }
+		inline T Get() const { return flags; }
 
-		inline bool IsSet(T f) { return (((flags & f) == f) ? true : false); }
+		inline bool IsSet(T f) const { return (((flags & f) == f) ? true : false); }
 
-		inline bool AnySet(T f) { return (((flags & f) != 0) ? true : false); }
+		inline bool AnySet(T f) const { return (((flags & f) != 0) ? true : false); }
 
 		inline SFlagset &operator =(T f) { flags = f; return *this; }
 
-		inline bool operator ==(T f) { return (f == flags); }
+		inline bool operator ==(T f) const { return (f == flags); }
 
-		inline bool operator !=(T f) { return (f != flags); }
+		inline bool operator !=(T f) const { return (f != flags); }
 
-		inline T operator ^(T f) { return (flags ^ f); }
+		inline T operator ^(T f) const { return (flags ^ f); }
 		inline SFlagset &operator ^=(T f) { flags ^= f; return *this; }
 
-		inline T operator |(T f) { return (flags | f); }
+		inline T operator |(T f) const { return (flags | f); }
 		inline SFlagset &operator |=(T f) { flags |= f; return *this; }
 
-		inline T operator &(T f) { return (flags & f); }
+		inline T operator &(T f) const { return (flags & f); }
 		inline SFlagset &operator &=(T f) { flags &= f; return *this; }
 
 	protected:
 		T flags;
 	};
 
+	/// 2D vector template with a helper union for member aliasing
 	template <typename T> struct SVec2
 	{
 		SVec2() { x = y = 0; }
@@ -93,6 +100,8 @@ namespace props
 		SVec2(const SVec2<T> &v) { x = v.x; y = v.y; }
 
 		inline SVec2<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; return *this; }
+		inline bool operator ==(const SVec2<T> &o) { return ((o.x == x) && (o.y == y)); }
+		inline bool operator !=(const SVec2<T> &o) { return !((o.x == x) && (o.y == y)); }
 
 		union
 		{
@@ -115,6 +124,7 @@ namespace props
 		};
 	};
 
+	/// 3D vector template with a helper union for member aliasing
 	template <typename T> struct SVec3
 	{
 		SVec3() { x = y = z = 0; }
@@ -124,6 +134,8 @@ namespace props
 
 		inline SVec3<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; return *this; }
 		inline SVec3<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = 0; return *this; }
+		inline bool operator ==(const SVec3<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z)); }
+		inline bool operator !=(const SVec3<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z)); }
 
 		union
 		{
@@ -141,6 +153,7 @@ namespace props
 		};
 	};
 
+	/// 4D vector template with a helper union for member aliasing
 	template <typename T> struct SVec4
 	{
 		SVec4() { x = y = z = w = 0; }
@@ -152,6 +165,8 @@ namespace props
 		inline SVec4<T> &operator =(const SVec4<T> &o) { x = o.x; y = o.y; z = o.z; w = o.w; return *this; }
 		inline SVec4<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; w = 0; return *this; }
 		inline SVec4<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = w = 0; return *this; }
+		inline bool operator ==(const SVec4<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
+		inline bool operator !=(const SVec4<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
 
 		union
 		{
@@ -164,6 +179,9 @@ namespace props
 		};
 	};
 
+
+	typedef SFlagset<uint8_t> TFlags8;
+	typedef SFlagset<uint16_t> TFlags16;
 	typedef SFlagset<uint32_t> TFlags32;
 	typedef SFlagset<uint64_t> TFlags64;
 	typedef SVec2<int64_t> TVec2I;
@@ -174,9 +192,15 @@ namespace props
 	typedef SVec4<float> TVec4F;
 	typedef uint32_t FOURCHARCODE;
 
-	/// The interface for all properties
+	class IPropertySet;
+
+
+	/// IProperty is a container for typed, sometimes convertible data. It provides methods to store and retreive
+	/// data and also allows a descriptor (aspect) to be given to it so that a normal string can be differentiated from
+	/// a filename, for example.
 	class IProperty
 	{
+
 	public:
 
 		enum PROPERTY_TYPE
@@ -216,6 +240,8 @@ namespace props
 			PA_QUATERNION,		/// VEC4
 			PA_BOOL_ONOFF,		/// BOOL TYPE "on" "off"
 			PA_BOOL_YESNO,		/// BOOL TYPE "yes" "no"
+			PA_BOOL_TRUEFALSE,	/// BOOL TYPE "true" "false"
+			PA_BOOL_ABLED,		/// BOOL TYPE "enabled" "disabled"
 			PA_FONT_DESC,		/// STRING describes a font
 			PA_DATE,			/// STRING / INT (holds a time_t)
 			PA_TIME,			/// STRING / INT (holds a time_t)
@@ -231,9 +257,9 @@ namespace props
 		{
 			/// stores...
 
-			SM_BIN_VALUESONLY = 0,	/// (binary format) id, type, value
-			SM_BIN_TERSE,			/// (binary format) id, type, aspect, value
-			SM_BIN_VERBOSE,			/// (binary format) name, id, type, aspect, value
+			SM_BIN_VALUESONLY = 0,	/// id, type, value
+			SM_BIN_TERSE,			/// id, type, aspect, value
+			SM_BIN_VERBOSE,			/// name, id, type, aspect, value
 
 			SM_NUMMODES
 		};
@@ -251,13 +277,28 @@ namespace props
 
 			FIRSTUSERFLAG,		/// If you need your own special flags that aren't here, start adding them at this point
 
-			RESERVED = 31
+			RESERVED1 = 30,		/// DO NOT USE
+			RESERVED2 = 31		/// DO NOT USE
 
 		} EPropFlag;
 
 		// A helper to allow compile-time evaluations of bitwise flags from the EPropFlags enum
 		static constexpr uint32_t PROPFLAG(EPropFlag f) { return (1L << (uint32_t)f); }
 
+		/// Implement an IEnumProvider to dynamically supply an IProperty with enum string values
+		class IEnumProvider
+		{
+
+		public:
+
+			/// Returns the number of string values that this enum provider has
+			virtual size_t GetNumValues(const IProperty *pprop) const = NULL;
+
+			/// Returns the enum string that corresponds to the given ordinal
+			/// If buf is supplied, the string will be copied into buf and returned to the caller, given bufsize as a limitation
+			virtual const TCHAR *GetValue(const IProperty *pprop, size_t ordinal, TCHAR *buf = nullptr, size_t bufsize = 0) const = NULL;
+
+		};
 
 		/// Frees any resources that may have been allocated by this property
 		virtual void Release() = NULL;
@@ -286,7 +327,7 @@ namespace props
 		/// Sets the data from another property
 		virtual void SetFromProperty(IProperty *pprop) = NULL;
 
-		/// Sets the data
+		/// Sets the data, potentially changing the internal type
 		virtual void SetInt(int64_t val) = NULL;
 		virtual void SetVec2I(const TVec2I &val) = NULL;
 		virtual void SetVec3I(const TVec3I &val) = NULL;
@@ -299,17 +340,25 @@ namespace props
 		virtual void SetGUID(GUID val) = NULL;
 		virtual void SetBool(bool val) = NULL;
 
-		virtual int64_t AsInt(int64_t *ret = nullptr) = NULL;
-		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) = NULL;
-		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) = NULL;
-		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) = NULL;
-		virtual float AsFloat(float *ret = nullptr) = NULL;
-		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) = NULL;
-		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) = NULL;
-		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) = NULL;
+		/// Returns the data in the requested form.
+		/// If the internal type does not match the type requested, a more complicated operation may happen under the hood
+		virtual int64_t AsInt(int64_t *ret = nullptr) const = NULL;
+		virtual const TVec2I *AsVec2I(TVec2I *ret = nullptr) const = NULL;
+		virtual const TVec3I *AsVec3I(TVec3I *ret = nullptr) const = NULL;
+		virtual const TVec4I *AsVec4I(TVec4I *ret = nullptr) const = NULL;
+		virtual float AsFloat(float *ret = nullptr) const = NULL;
+		virtual const TVec2F *AsVec2F(TVec2F *ret = nullptr) const = NULL;
+		virtual const TVec3F *AsVec3F(TVec3F *ret = nullptr) const = NULL;
+		virtual const TVec4F *AsVec4F(TVec4F *ret = nullptr) const = NULL;
 		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
-		virtual GUID AsGUID(GUID *ret = nullptr) = NULL;
-		virtual bool AsBool(bool *ret = nullptr) = NULL;
+		virtual GUID AsGUID(GUID *ret = nullptr) const = NULL;
+		virtual bool AsBool(bool *ret = nullptr) const = NULL;
+
+		/// Instead of providing a comma-delimited enum string, you can optionally provide an IEnumProvider to return enum values
+		virtual void SetEnumProvider(const IEnumProvider *pep) = NULL;
+
+		/// Indicates that this property has a dynamic enum provider
+		virtual const IEnumProvider *GetEnumProvider() const = NULL;
 
 		/// Sets the individual enumeration string values from a comma-delimited string
 		virtual void SetEnumStrings(const TCHAR *strs) = NULL;
@@ -321,29 +370,41 @@ namespace props
 		virtual bool SetEnumValByString(const TCHAR *s) = NULL;
 
 		/// Returns an individual enumerated string by index
-		virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
+		virtual const TCHAR *GetEnumString(size_t idx, TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 
 		/// Returns the entire, comma-delimited string for an enumeration. Returns nullptr if not an enum property
-		virtual const TCHAR *GetEnumStrings(TCHAR *ret = nullptr, size_t retsize = 0) = NULL;
+		virtual const TCHAR *GetEnumStrings(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 
 		/// Returns the maximum allowed value for an enum
-		virtual size_t GetMaxEnumVal() = NULL;
+		virtual size_t GetMaxEnumVal() const = NULL;
+
+		/// Returns the owner of this IProperty
+		virtual IPropertySet *GetOwner() const = NULL;
+
+		/// Returns true if the value of this property matches that of the given property
+		virtual bool IsSameAs(const IProperty *other_prop) const = NULL;
+
 	};
 
-	class IPropertySet;
 
 	/// Implement this class and register with an IPropertySet implementation to receive notifications when properties changes
 	class IPropertyChangeListener
 	{
+
 	public:
 
+		/// Called by a property set when one of it's properties has changed
 		virtual void PropertyChanged(const IProperty *pprop) = NULL;
+
 	};
 
+	/// IPropertySet is a container for IProperty instances, 
 	class IPropertySet
 	{
+
 	public:
 
+		/// Releases any resources the property set may have allocated
 		virtual void Release() = NULL;
 
 		/// Creates a new property and adds it to this property set
@@ -352,20 +413,22 @@ namespace props
 		/// Creates a property that references data held elsewhere and adds it to this property set (only bool, number, guid, and vector types supported)
 		virtual IProperty *CreateReferenceProperty(const TCHAR *propname, FOURCHARCODE propid, void *addr, IProperty::PROPERTY_TYPE type) = NULL;
 
-		/// Deletes a property from this set, based on a given index...
+		/// Deletes a property from this set, based on a given index
 		virtual void DeleteProperty(size_t idx) = NULL;
 
-		/// Deletes a property from this set, based on a given property id...
+		/// Deletes a property from this set, based on a given property id
 		virtual void DeletePropertyById(FOURCHARCODE propid) = NULL;
 
-		/// Deletes a property from this set, based on a given property name...
+		/// Deletes a property from this set, based on a given property name
 		virtual void DeletePropertyByName(const TCHAR *propname) = NULL;
 
-		/// Deletes all properties from this set...
+		/// Deletes all properties from this set
 		virtual void DeleteAll() = NULL;
 
+		/// Returns the number of properties in this set
 		virtual size_t GetPropertyCount() const = NULL;
 
+		/// Returns the property at the given index or nullptr if the index is out of range
 		virtual IProperty *GetProperty(size_t idx) const = NULL;
 
 		/// Gets a property from this set, given a property id
@@ -374,7 +437,11 @@ namespace props
 		/// Gets a property from this set, given a property name
 		virtual IProperty *GetPropertyByName(const TCHAR *propname) const = NULL;
 
-		/// Takes the properties from the given list and appends them to this set...
+		/// Indexing gets a property from this set, given a property id (FOURCHARCODE) or name (const TCHAR *)
+		virtual IProperty * operator[](FOURCHARCODE propid) const = NULL;
+		virtual IProperty * operator[](const TCHAR *propname) const = NULL;
+
+		/// Takes the properties from the given list and appends them to this set
 		virtual void AppendPropertySet(const IPropertySet *propset) = NULL;
 
 		/// Writes all properties to a binary stream
@@ -387,6 +454,18 @@ namespace props
 		/// consumed will be reported, if desired
 		virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed) = NULL;
 
+		/// <summary>
+		/// Writes all properties to an XML-formatted tstring in the verbose equivalent
+		/// </summary>
+		/// <param name="xmls">When the return value is true, will contain the XML fragment that represents all properties in the set</param>
+		virtual bool SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring &xmls) const = NULL;
+
+		/// <summary>
+		/// Reads all properties from an XML-formatted tstring
+		/// </summary>
+		/// <param name="xmls">an XML fragment that contains property data</param>
+		virtual bool DeserializeFromXMLString(const tstring &xmls) = NULL;
+
 		/// Register a change listener if you want to know when a property has changed
 		virtual void SetChangeListener(const IPropertyChangeListener *plistener) = NULL;
 
@@ -394,6 +473,7 @@ namespace props
 		/// These can be serialized to a packet and distributed to a set of listeners. Imagination is the only limitation.
 		/// (Only included as an example, use or not, with discretion)
 		POWERPROPS_API static IPropertySet *CreatePropertySet();
+
 	};
 
 };
