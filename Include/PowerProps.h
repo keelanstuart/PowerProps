@@ -101,7 +101,7 @@ namespace props
 
 		inline SVec2<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; return *this; }
 		inline bool operator ==(const SVec2<T> &o) { return ((o.x == x) && (o.y == y)); }
-		inline bool operator !=(const SVec2<T> &o) { return !((o.x == x) && (o.y == y)); }
+		inline bool operator !=(const SVec2<T> &o) { return ((o.x != x) || (o.y != y)); }
 
 		union
 		{
@@ -135,7 +135,7 @@ namespace props
 		inline SVec3<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; return *this; }
 		inline SVec3<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = 0; return *this; }
 		inline bool operator ==(const SVec3<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z)); }
-		inline bool operator !=(const SVec3<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z)); }
+		inline bool operator !=(const SVec3<T> &o) { return ((o.x != x) || (o.y != y) || (o.z != z)); }
 
 		union
 		{
@@ -166,7 +166,7 @@ namespace props
 		inline SVec4<T> &operator =(const SVec3<T> &o) { x = o.x; y = o.y; z = o.z; w = 0; return *this; }
 		inline SVec4<T> &operator =(const SVec2<T> &o) { x = o.x; y = o.y; z = w = 0; return *this; }
 		inline bool operator ==(const SVec4<T> &o) { return ((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
-		inline bool operator !=(const SVec4<T> &o) { return !((o.x == x) && (o.y == y) && (o.z == z) && (o.w == w)); }
+		inline bool operator !=(const SVec4<T> &o) { return ((o.x != x) || (o.y != y) || (o.z != z) || (o.w != w)); }
 
 		union
 		{
@@ -176,6 +176,40 @@ namespace props
 			};
 
 			T v[4];
+		};
+	};
+
+	/// 3x3 matrix template
+	template <typename T> struct SMat3x3
+	{
+		// default to identity
+		SMat3x3() { m[0] = SVec3<T>(1, 0, 0); m[1] = SVec3<T>(0, 1, 0); m[2] = SVec3<T>(0, 0, 1); }
+		SMat3x3(const SMat3x3<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; }
+
+		inline SMat3x3<T> &operator =(const SMat3x3<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; return *this; }
+		inline bool operator ==(const SMat3x3<T> &o) { return (memcmp(&m, &o.m, sizeof(m)) == 0); }
+		inline bool operator !=(const SMat3x3<T> &o) { return (memcmp(&m, &o.m, sizeof(m)) != 0); }
+
+		union
+		{
+			SVec3<T> m[3];
+		};
+	};
+
+	/// 4x4 matrix template
+	template <typename T> struct SMat4x4
+	{
+		// default to identity
+		SMat4x4() { m[0] = SVec4<T>(1, 0, 0, 0); m[1] = SVec4<T>(0, 1, 0, 0); m[2] = SVec4<T>(0, 0, 1, 0); m[2] = SVec4<T>(0, 0, 0, 1); }
+		SMat4x4(const SMat4x4<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; m[3] = o.m[3]; }
+
+		inline SMat4x4<T> &operator =(const SMat4x4<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; m[3] = o.m[3]; return *this; }
+		inline bool operator ==(const SMat4x4<T> &o) { return (memcmp(&m, &o.m, sizeof(m)) == 0); }
+		inline bool operator !=(const SMat4x4<T> &o) { return (memcmp(&m, &o.m, sizeof(m)) != 0); }
+
+		union
+		{
+			SVec4<T> m[4];
 		};
 	};
 
@@ -190,6 +224,8 @@ namespace props
 	typedef SVec2<float> TVec2F;
 	typedef SVec3<float> TVec3F;
 	typedef SVec4<float> TVec4F;
+	typedef SMat3x3<float> TMat3x3F;
+	typedef SMat4x4<float> TMat4x4F;
 	typedef uint32_t FOURCHARCODE;
 
 	class IPropertySet;
@@ -219,6 +255,8 @@ namespace props
 			PT_GUID,
 			PT_ENUM,
 			PT_BOOLEAN,
+			PT_FLOAT_MAT3X3,	/// 3x3 floating-point Matrix
+			PT_FLOAT_MAT4X4,	/// 4x4 floating-point Matrix
 
 			PT_NUMTYPES
 		};
@@ -230,22 +268,40 @@ namespace props
 		{
 			PA_GENERIC = 0,
 
-			PA_FILENAME,		/// STRING
-			PA_DIRECTORY,		/// STRING
-			PA_COLOR_RGB,		/// INT - RGB
-			PA_COLOR_RGBA,		/// INT - RGBA
-			PA_LATLON,			/// VEC2/VEC3 lattitude / longitude / altitude (if vec3)
-			PA_ELEVAZIM,		/// VEC2 azimuth / elevation
-			PA_RASCDEC,			/// VEC2 right ascension / declination
-			PA_QUATERNION,		/// VEC4
-			PA_BOOL_ONOFF,		/// BOOL TYPE "on" "off"
-			PA_BOOL_YESNO,		/// BOOL TYPE "yes" "no"
-			PA_BOOL_TRUEFALSE,	/// BOOL TYPE "true" "false"
-			PA_BOOL_ABLED,		/// BOOL TYPE "enabled" "disabled"
-			PA_FONT_DESC,		/// STRING describes a font
-			PA_DATE,			/// STRING / INT (holds a time_t)
-			PA_TIME,			/// STRING / INT (holds a time_t)
-			PA_IPADDRESS,		/// STRING
+			PA_FILENAME,						/// STRING
+			PA_DIRECTORY,						/// STRING
+			PA_COLOR_RGB,						/// INT - RGB
+			PA_COLOR_RGBA,						/// INT - RGBA
+			PA_LATLON,							/// VEC2/VEC3 lattitude / longitude / altitude (if vec3)
+			PA_ELEVAZIM,						/// VEC2 azimuth / elevation
+			PA_RASCDEC,							/// VEC2 right ascension / declination
+			PA_QUATERNION,						/// VEC4
+			PA_BOOL_ONOFF,						/// BOOL TYPE "on" "off"
+			PA_BOOL_YESNO,						/// BOOL TYPE "yes" "no"
+			PA_BOOL_TRUEFALSE,					/// BOOL TYPE "true" "false"
+			PA_BOOL_ABLED,						/// BOOL TYPE "enabled" "disabled"
+			PA_FONT_DESC,						/// STRING describes a font
+			PA_DATE,							/// STRING / INT (holds a time_t)
+			PA_TIME,							/// STRING / INT (holds a time_t)
+			PA_IPADDRESS,						/// STRING
+			PA_WORLD,							/// MATRIX - World
+			PA_WORLDINV,						/// MATRIX - inverse(World)
+			PA_WORLDINVTRANS,					/// MATRIX - inverse(transpose(World))
+			PA_VIEW,							/// MATRIX - View
+			PA_VIEWINV,							/// MATRIX - inverse(View)
+			PA_VIEWINVTRANS,					/// MATRIX - inverse(transpose(View))
+			PA_VIEWPROJECTION,					/// MATRIX - View * Projection
+			PA_VIEWPROJECTIONINV,				/// MATRIX - inverse(View * Projection)
+			PA_VIEWPROJECTIONINVTRANS,			/// MATRIX - inverse(transpose(View * Projection))
+			PA_PROJECTION,						/// MATRIX - Projection
+			PA_PROJECTIONINV,					/// MATRIX - inverse(Projection)
+			PA_PROJECTIONINVTRANS,				/// MATRIX - inverse(transpose(Projection))
+			PA_WORLDVIEW,						/// MATRIX - World * View
+			PA_WORLDVIEWINV,					/// MATRIX - inverse(World * View)
+			PA_WORLDVIEWINVTRANS,				/// MATRIX - inverse(transpose(World * View))
+			PA_WORLDVIEWPROJECTION,				/// MATRIX - World * View * Projection
+			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
+			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
 
 			PA_NUMASPECTS,
 
@@ -339,6 +395,8 @@ namespace props
 		virtual void SetString(const TCHAR *val) = NULL;
 		virtual void SetGUID(GUID val) = NULL;
 		virtual void SetBool(bool val) = NULL;
+		virtual void SetMat3x3F(const TMat3x3F *val) = NULL;
+		virtual void SetMat4x4F(const TMat4x4F *val) = NULL;
 
 		/// Returns the data in the requested form.
 		/// If the internal type does not match the type requested, a more complicated operation may happen under the hood
@@ -353,6 +411,8 @@ namespace props
 		virtual const TCHAR *AsString(TCHAR *ret = nullptr, size_t retsize = 0) const = NULL;
 		virtual GUID AsGUID(GUID *ret = nullptr) const = NULL;
 		virtual bool AsBool(bool *ret = nullptr) const = NULL;
+		virtual const TMat3x3F *AsMat3x3F(TMat3x3F *ret = nullptr) const = NULL;
+		virtual const TMat4x4F *AsMat4x4F(TMat4x4F *ret = nullptr) const = NULL;
 
 		/// Instead of providing a comma-delimited enum string, you can optionally provide an IEnumProvider to return enum values
 		virtual void SetEnumProvider(const IEnumProvider *pep) = NULL;

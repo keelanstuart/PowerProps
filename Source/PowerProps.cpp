@@ -106,7 +106,7 @@ public:
 			union
 			{
 				int64_t m_i, *p_i;
-				size_t m_e;
+				uint64_t m_e;
 			};
 			union
 			{
@@ -121,6 +121,8 @@ public:
 		TVec2F m_v2f, *p_v2f;
 		TVec3F m_v3f, *p_v3f;
 		TVec4F m_v4f, *p_v4f;
+		TMat3x3F m_m3x3f, *p_m3x3f;
+		TMat4x4F m_m4x4f, *p_m4x4f;
 		GUID m_g, *p_g;
 		bool m_b, *p_b;
 	};
@@ -197,9 +199,24 @@ public:
 				bufsz = _sctprintf(_T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
 				break;
 
+			case PT_FLOAT_MAT3X3:
+				bufsz = _sctprintf(_T("%f,%f,%f,%f,%f,%f,%f,%f,%f"),
+					m_m3x3f.m[0].x, m_m3x3f.m[0].y, m_m3x3f.m[0].z,
+					m_m3x3f.m[1].x, m_m3x3f.m[1].y, m_m3x3f.m[1].z,
+					m_m3x3f.m[2].x, m_m3x3f.m[2].y, m_m3x3f.m[2].z);
+				break;
+
+			case PT_FLOAT_MAT4X4:
+				bufsz = _sctprintf(_T("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"),
+					m_m4x4f.m[0].x, m_m4x4f.m[0].y, m_m4x4f.m[0].z, m_m4x4f.m[0].w,
+					m_m4x4f.m[1].x, m_m4x4f.m[1].y, m_m4x4f.m[1].z, m_m4x4f.m[1].w,
+					m_m4x4f.m[2].x, m_m4x4f.m[2].y, m_m4x4f.m[2].z, m_m4x4f.m[2].w,
+					m_m4x4f.m[3].x, m_m4x4f.m[3].y, m_m4x4f.m[3].z, m_m4x4f.m[3].w);
+				break;
+
 			case PT_GUID:
 				bufsz = _sctprintf(_T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), m_g.Data1, m_g.Data2, m_g.Data3,
-								   m_g.Data4[0], m_g.Data4[1], m_g.Data4[2], m_g.Data4[3], m_g.Data4[4], m_g.Data4[5], m_g.Data4[6], m_g.Data4[7]);
+					m_g.Data4[0], m_g.Data4[1], m_g.Data4[2], m_g.Data4[3], m_g.Data4[4], m_g.Data4[5], m_g.Data4[6], m_g.Data4[7]);
 				break;
 		}
 
@@ -738,6 +755,38 @@ public:
 		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
+	virtual void SetMat3x3F(const TMat3x3F *val)
+	{
+		if (m_Flags.IsSet(PROPFLAG(TYPELOCKED)) && (m_Type != PT_FLOAT_MAT3X3))
+			return;
+
+		Reset();
+
+		m_Type = PT_FLOAT_MAT3X3;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_m3x3f = *val;
+		else
+			*p_m3x3f = *val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+	}
+
+	virtual void SetMat4x4F(const TMat4x4F *val)
+	{
+		if (m_Flags.IsSet(PROPFLAG(TYPELOCKED)) && (m_Type != PT_FLOAT_MAT4X4))
+			return;
+
+		Reset();
+
+		m_Type = PT_FLOAT_MAT4X4;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_m4x4f = *val;
+		else
+			*p_m4x4f = *val;
+
+		if (m_pOwner && m_pOwner->m_pListener) m_pOwner->m_pListener->PropertyChanged(this);
+	}
+
 	virtual void SetString(const TCHAR *val)
 	{
 		Reset();
@@ -1058,6 +1107,18 @@ public:
 				TVec4F tmp;
 				pprop->AsVec4F(&tmp);
 				SetVec4F(tmp);
+				break;
+			}
+
+			case PT_FLOAT_MAT3X3:
+			{
+				SetMat3x3F(pprop->AsMat3x3F());
+				break;
+			}
+
+			case PT_FLOAT_MAT4X4:
+			{
+				SetMat4x4F(pprop->AsMat4x4F());
 				break;
 			}
 
@@ -1508,6 +1569,42 @@ public:
 		return ret ? ret : nullptr;
 	}
 
+	virtual const TMat3x3F *AsMat3x3F(TMat3x3F *ret) const
+	{
+		if (m_Type == PT_FLOAT_MAT3X3)
+		{
+			if (ret)
+			{
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_m3x3f;
+				else
+					*ret = *p_m3x3f;
+			}
+
+			return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_m3x3f : p_m3x3f);
+		}
+
+		return nullptr;
+	}
+
+	virtual const TMat4x4F *AsMat4x4F(TMat4x4F *ret) const
+	{
+		if (m_Type == PT_FLOAT_MAT4X4)
+		{
+			if (ret)
+			{
+				if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*ret = m_m4x4f;
+				else
+					*ret = *p_m4x4f;
+			}
+
+			return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_m4x4f : p_m4x4f);
+		}
+
+		return nullptr;
+	}
+
 	virtual const TCHAR *AsString(TCHAR *ret, size_t retsize) const
 	{
 		if (m_Type == PT_STRING)
@@ -1599,6 +1696,21 @@ public:
 
 				case PT_FLOAT_V4:
 					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f"), m_v4f.x, m_v4f.y, m_v4f.z, m_v4f.w);
+					break;
+
+				case PT_FLOAT_MAT3X3:
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f,%f,%f,%f,%f,%f"),
+						m_m3x3f.m[0].x, m_m3x3f.m[0].y, m_m3x3f.m[0].z,
+						m_m3x3f.m[1].x, m_m3x3f.m[1].y, m_m3x3f.m[1].z,
+						m_m3x3f.m[2].x, m_m3x3f.m[2].y, m_m3x3f.m[2].z);
+					break;
+
+				case PT_FLOAT_MAT4X4:
+					_sntprintf_s(ret, retsize, retsize, _T("%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"),
+						m_m4x4f.m[0].x, m_m4x4f.m[0].y, m_m4x4f.m[0].z, m_m4x4f.m[0].w,
+						m_m4x4f.m[1].x, m_m4x4f.m[1].y, m_m4x4f.m[1].z, m_m4x4f.m[1].w,
+						m_m4x4f.m[2].x, m_m4x4f.m[2].y, m_m4x4f.m[2].z, m_m4x4f.m[2].w,
+						m_m4x4f.m[3].x, m_m4x4f.m[3].y, m_m4x4f.m[3].z, m_m4x4f.m[3].w);
 					break;
 
 				case PT_GUID:
@@ -1714,12 +1826,52 @@ public:
 				sz += sizeof(int64_t);
 				break;
 
+			case PT_INT_V2:
+				sz += sizeof(TVec2I);
+				break;
+
+			case PT_INT_V3:
+				sz += sizeof(TVec3I);
+				break;
+
+			case PT_INT_V4:
+				sz += sizeof(TVec4I);
+				break;
+
 			case PT_FLOAT:
 				sz += sizeof(float);
 				break;
 
+			case PT_FLOAT_V2:
+				sz += sizeof(TVec2F);
+				break;
+
+			case PT_FLOAT_V3:
+				sz += sizeof(TVec3F);
+				break;
+
+			case PT_FLOAT_V4:
+				sz += sizeof(TVec4F);
+				break;
+
 			case PT_GUID:
 				sz += sizeof(GUID);
+				break;
+
+			case PT_ENUM:
+				sz += sizeof(uint64_t) + ((_tcslen(m_s) + 1) * sizeof(TCHAR));
+				break;
+
+			case PT_BOOLEAN:
+				sz += sizeof(bool);
+				break;
+
+			case PT_FLOAT_MAT3X3:
+				sz += sizeof(TMat3x3F);
+				break;
+
+			case PT_FLOAT_MAT4X4:
+				sz += sizeof(TMat4x4F);
 				break;
 		}
 
@@ -1767,14 +1919,68 @@ public:
 				buf += sizeof(int64_t);
 				break;
 
+			case PT_INT_V2:
+				*((TVec2I *)buf) = m_v2i;
+				buf += sizeof(TVec2I);
+				break;
+
+			case PT_INT_V3:
+				*((TVec3I *)buf) = m_v3i;
+				buf += sizeof(TVec3I);
+				break;
+
+			case PT_INT_V4:
+				*((TVec4I *)buf) = m_v4i;
+				buf += sizeof(TVec4I);
+				break;
+
 			case PT_FLOAT:
 				*((float *)buf) = m_f;
 				buf += sizeof(float);
 				break;
 
+			case PT_FLOAT_V2:
+				*((TVec2F *)buf) = m_v2f;
+				buf += sizeof(TVec2F);
+				break;
+
+			case PT_FLOAT_V3:
+				*((TVec3F *)buf) = m_v3f;
+				buf += sizeof(TVec3F);
+				break;
+
+			case PT_FLOAT_V4:
+				*((TVec4F *)buf) = m_v4f;
+				buf += sizeof(TVec4F);
+				break;
+
 			case PT_GUID:
 				*((GUID *)buf) = m_g;
 				buf += sizeof(GUID);
+				break;
+
+			case PT_BOOLEAN:
+				*((bool *)buf) = m_b;
+				buf += sizeof(bool);
+				break;
+
+			case PT_ENUM:
+			{
+				size_t bs = sizeof(TCHAR) * (_tcslen(m_s) + 1);
+				memcpy(buf, m_s, bs);
+				buf += bs;
+				*((uint64_t *)buf) = m_e;
+				break;
+			}
+
+			case PT_FLOAT_MAT3X3:
+				*((TMat3x3F *)buf) = m_m3x3f;
+				buf += sizeof(TMat3x3F);
+				break;
+
+			case PT_FLOAT_MAT4X4:
+				*((TMat4x4F *)buf) = m_m4x4f;
+				buf += sizeof(TMat4x4F);
 				break;
 		}
 
@@ -1830,14 +2036,70 @@ public:
 				buf += sizeof(int64_t);
 				break;
 
+			case PT_INT_V2:
+				m_v2i = *((TVec2I *)buf);
+				buf += sizeof(TVec2I);
+				break;
+
+			case PT_INT_V3:
+				m_v3i = *((TVec3I *)buf);
+				buf += sizeof(TVec3I);
+				break;
+
+			case PT_INT_V4:
+				m_v4i = *((TVec4I *)buf);
+				buf += sizeof(TVec4I);
+				break;
+
 			case PT_FLOAT:
 				m_f = *((float *)buf);
 				buf += sizeof(float);
 				break;
 
+			case PT_FLOAT_V2:
+				m_v2f = *((TVec2F *)buf);
+				buf += sizeof(TVec2F);
+				break;
+
+			case PT_FLOAT_V3:
+				m_v3f = *((TVec3F *)buf);
+				buf += sizeof(TVec3F);
+				break;
+
+			case PT_FLOAT_V4:
+				m_v4f = *((TVec4F *)buf);
+				buf += sizeof(TVec4F);
+				break;
+
 			case PT_GUID:
 				m_g = *((GUID *)buf);
 				buf += sizeof(GUID);
+				break;
+
+			case PT_BOOLEAN:
+				m_b = *((bool *)buf);
+				buf += sizeof(bool);
+				break;
+
+			case PT_ENUM:
+			{
+				TCHAR *tmp = _tcsdup((TCHAR *)buf);
+				buf += sizeof(TCHAR) * (_tcslen(tmp) + 1);
+				SetEnumStrings(tmp);
+				m_e = *((uint64_t *)buf);
+				buf += sizeof(uint64_t);
+				free(tmp);
+				break;
+			}
+
+			case PT_FLOAT_MAT3X3:
+				m_m3x3f = *((TMat3x3F *)buf);
+				buf += sizeof(TMat3x3F);
+				break;
+
+			case PT_FLOAT_MAT4X4:
+				m_m4x4f = *((TMat4x4F *)buf);
+				buf += sizeof(TMat4x4F);
 				break;
 		}
 
@@ -1911,6 +2173,16 @@ public:
 
 			case PROPERTY_TYPE::PT_INT_V4:
 				if (p->m_v4i != m_v4i)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT_MAT3X3:
+				if (p->m_m3x3f != m_m3x3f)
+					return false;
+				break;
+
+			case PROPERTY_TYPE::PT_FLOAT_MAT4X4:
+				if (p->m_m4x4f != m_m4x4f)
 					return false;
 				break;
 
@@ -2012,6 +2284,14 @@ IProperty *CPropertySet::CreateReferenceProperty(const TCHAR *propname, FOURCHAR
 
 		case IProperty::PROPERTY_TYPE::PT_FLOAT_V4:
 			pprop->p_v4f = (TVec4F *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_FLOAT_MAT3X3:
+			pprop->p_m3x3f = (TMat3x3F *)addr;
+			break;
+
+		case IProperty::PROPERTY_TYPE::PT_FLOAT_MAT4X4:
+			pprop->p_m4x4f = (TMat4x4F *)addr;
 			break;
 
 		case IProperty::PROPERTY_TYPE::PT_BOOLEAN:
