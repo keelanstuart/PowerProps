@@ -200,7 +200,7 @@ namespace props
 	template <typename T> struct SMat4x4
 	{
 		// default to identity
-		SMat4x4() { m[0] = SVec4<T>(1, 0, 0, 0); m[1] = SVec4<T>(0, 1, 0, 0); m[2] = SVec4<T>(0, 0, 1, 0); m[2] = SVec4<T>(0, 0, 0, 1); }
+		SMat4x4() { m[0] = SVec4<T>(1, 0, 0, 0); m[1] = SVec4<T>(0, 1, 0, 0); m[2] = SVec4<T>(0, 0, 1, 0); m[3] = SVec4<T>(0, 0, 0, 1); }
 		SMat4x4(const SMat4x4<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; m[3] = o.m[3]; }
 
 		inline SMat4x4<T> &operator =(const SMat4x4<T> &o) { m[0] = o.m[0]; m[1] = o.m[1]; m[2] = o.m[2]; m[3] = o.m[3]; return *this; }
@@ -284,6 +284,7 @@ namespace props
 			PA_DATE,							/// STRING / INT (holds a time_t)
 			PA_TIME,							/// STRING / INT (holds a time_t)
 			PA_IPADDRESS,						/// STRING
+
 			PA_WORLD,							/// MATRIX - World
 			PA_WORLDINV,						/// MATRIX - inverse(World)
 			PA_WORLDINVTRANS,					/// MATRIX - inverse(transpose(World))
@@ -302,6 +303,16 @@ namespace props
 			PA_WORLDVIEWPROJECTION,				/// MATRIX - World * View * Projection
 			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
+
+			PA_COLOR_DIFFUSE,					/// COLOR - diffuse
+			PA_COLOR_EMISSIVE,					/// COLOR - emissive
+			PA_COLOR_SPECULAR,					/// COLOR - specular
+
+			PA_SAMPLER2D_DIFFUSE,				/// SAMPLER2D - diffuse texture
+			PA_SAMPLER2D_NORMAL,				/// SAMPLER2D - normal texture
+			PA_SAMPLER2D_SURFDESC,				/// SAMPLER2D - surface description texture (BRDF / metalness-roughness model)
+			PA_SAMPLER2D_EMISSIVE,				/// SAMPLER2D - emissive texture
+			PA_SAMPLER2D_POSITIONDEPTH,			/// SAMPLER2D - position / depth texture
 
 			PA_NUMASPECTS,
 

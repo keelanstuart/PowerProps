@@ -153,7 +153,7 @@ public:
 #if defined(_M_X64)
 				bufsz = _sctprintf(_T("%I64d"), m_e);
 #else
-				bufsz = _sctprintf(_T("%zd"), m_e);
+				bufsz = _sctprintf(_T("%lld"), m_e);
 #endif
 				for (TStringDeque::const_iterator it = m_es->cbegin(); it != m_es->cend(); it++)
 					bufsz += _sctprintf(_T("%s"), it->c_str()) + 1;
@@ -1619,8 +1619,8 @@ public:
 			{
 				if (m_pep)
 				{
-					if (!ret || (retsize == 0) && (m_e < m_pep->GetNumValues(this)))
-						return m_pep->GetValue(this, m_e, ret, retsize);
+					if (!ret || (retsize == 0) && (m_e < (uint64_t)m_pep->GetNumValues(this)))
+						return m_pep->GetValue(this, (size_t)m_e, ret, retsize);
 					else
 						return m_s;
 				}
