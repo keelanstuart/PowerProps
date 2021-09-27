@@ -1144,6 +1144,9 @@ public:
 		}
 
 		SetAspect(pprop->GetAspect());
+
+		if (m_pOwner->m_pListener)
+			m_pOwner->m_pListener->PropertyChanged(this);
 	}
 
 	virtual int64_t AsInt(int64_t *ret) const
@@ -2447,7 +2450,12 @@ CPropertySet &CPropertySet::operator =(IPropertySet *propset)
 
 		IProperty *pnew = CreateProperty(pother->GetName(), pother->GetID());
 		if (pnew)
+		{
 			pnew->SetFromProperty(pother);
+
+			if (m_pListener)
+				m_pListener->PropertyChanged(pnew);
+		}
 	}
 
 	return *this;
@@ -2477,7 +2485,9 @@ void CPropertySet::AppendPropertySet(const IPropertySet *propset)
 		}
 
 		if (pp)
+		{
 			pp->SetFromProperty(po);
+		}
 	}
 }
 

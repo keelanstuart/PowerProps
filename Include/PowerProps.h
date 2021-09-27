@@ -299,7 +299,7 @@ namespace props
 			PA_PROJECTIONINVTRANS,				/// MATRIX - inverse(transpose(Projection))
 			PA_WORLDVIEW,						/// MATRIX - World * View
 			PA_WORLDVIEWINV,					/// MATRIX - inverse(World * View)
-			PA_WORLDVIEWINVTRANS,				/// MATRIX - inverse(transpose(World * View))
+			PA_NORMALMAT,				/// MATRIX - inverse(transpose(World * View))
 			PA_WORLDVIEWPROJECTION,				/// MATRIX - World * View * Projection
 			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
