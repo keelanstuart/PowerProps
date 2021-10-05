@@ -299,7 +299,7 @@ namespace props
 			PA_PROJECTIONINVTRANS,				/// MATRIX - inverse(transpose(Projection))
 			PA_WORLDVIEW,						/// MATRIX - World * View
 			PA_WORLDVIEWINV,					/// MATRIX - inverse(World * View)
-			PA_NORMALMAT,				/// MATRIX - inverse(transpose(World * View))
+			PA_NORMALMAT,						/// MATRIX - inverse(transpose(World * View))
 			PA_WORLDVIEWPROJECTION,				/// MATRIX - World * View * Projection
 			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
@@ -308,11 +308,9 @@ namespace props
 			PA_COLOR_EMISSIVE,					/// COLOR - emissive
 			PA_COLOR_SPECULAR,					/// COLOR - specular
 
-			PA_SAMPLER2D_DIFFUSE,				/// SAMPLER2D - diffuse texture
-			PA_SAMPLER2D_NORMAL,				/// SAMPLER2D - normal texture
-			PA_SAMPLER2D_SURFDESC,				/// SAMPLER2D - surface description texture (BRDF / metalness-roughness model)
-			PA_SAMPLER2D_EMISSIVE,				/// SAMPLER2D - emissive texture
-			PA_SAMPLER2D_POSITIONDEPTH,			/// SAMPLER2D - position / depth texture
+			PA_SAMPLER2D,						/// SAMPLER2D - a 2D texture
+			PA_SAMPLERCUBE,						/// SAMPLERCUBE - a Cube texture
+			PA_SAMPLER3D,						/// SAMPLER3D - a 3D texture
 
 			PA_NUMASPECTS,
 
