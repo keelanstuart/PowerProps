@@ -49,6 +49,7 @@
 
 #endif
 
+#include <guiddef.h>
 
 namespace props
 {
@@ -516,12 +517,12 @@ namespace props
 		/// Writes all properties to a binary stream
 		/// If buf is null but amountused is not, the number of bytes required to fully
 		/// store the property set will be placed at amountused
-		virtual bool Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused = NULL) const = NULL;
+		virtual bool Serialize(IProperty::SERIALIZE_MODE mode, uint8_t *buf, size_t bufsize, size_t *amountused = NULL) const = NULL;
 
 		/// Reads all properties from a binary stream
 		/// If successful, the return value will be true and the number of bytes
 		/// consumed will be reported, if desired
-		virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed) = NULL;
+		virtual bool Deserialize(uint8_t *buf, size_t bufsize, size_t *bytesconsumed) = NULL;
 
 		/// <summary>
 		/// Writes all properties to an XML-formatted tstring in the verbose equivalent
