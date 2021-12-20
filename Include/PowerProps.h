@@ -308,6 +308,10 @@ namespace props
 			PA_COLOR_DIFFUSE,					/// COLOR - diffuse
 			PA_COLOR_EMISSIVE,					/// COLOR - emissive
 			PA_COLOR_SPECULAR,					/// COLOR - specular
+			PA_ALPHAPASS,						/// VEC2 / FLOAT - the range inside which alpha pixels will pass
+
+			PA_EYE_POSITION,					/// VEC3
+			PA_EYE_DIRECTION,					/// VEC3
 
 			PA_SAMPLER2D,						/// SAMPLER2D - a 2D texture
 			PA_SAMPLERCUBE,						/// SAMPLERCUBE - a Cube texture
