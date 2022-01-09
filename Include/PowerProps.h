@@ -304,6 +304,7 @@ namespace props
 			PA_WORLDVIEWPROJECTION,				/// MATRIX - World * View * Projection
 			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
+			PA_SUNSHADOWMAT,					/// MATRIX - sun light's shadow matrix
 
 			PA_COLOR_DIFFUSE,					/// COLOR - diffuse
 			PA_COLOR_EMISSIVE,					/// COLOR - emissive
@@ -312,6 +313,9 @@ namespace props
 
 			PA_EYE_POSITION,					/// VEC3
 			PA_EYE_DIRECTION,					/// VEC3
+			PA_SUN_DIRECTION,					/// VEC3
+			PA_SUN_COLOR,						/// VEC3
+			PA_AMBIENT_COLOR,					/// VEC3
 
 			PA_SAMPLER2D,						/// SAMPLER2D - a 2D texture
 			PA_SAMPLERCUBE,						/// SAMPLERCUBE - a Cube texture
