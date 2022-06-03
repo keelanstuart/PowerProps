@@ -1046,7 +1046,8 @@ public:
 			return;
 		}
 
-		m_Flags.SetAll(pprop->Flags());
+		uint32_t res_flags = (1 << EPropFlag::RESERVED1) | (1 << EPropFlag::RESERVED2);
+		m_Flags = ((uint32_t)m_Flags & res_flags) | ((uint32_t)(pprop->Flags()) & ~res_flags);
 
 		switch (pprop->GetType())
 		{
@@ -1447,6 +1448,32 @@ public:
 				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v2f : p_v2f);
 
 				break;
+
+			case PT_FLOAT_V3:
+				if (ret)
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = *((props::TVec2F *)&m_v3f);
+					else
+						*ret = *((props::TVec2F *)p_v3f);
+				}
+
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? (props::TVec2F *)&m_v3f : (props::TVec2F *)p_v3f);
+
+				break;
+
+			case PT_FLOAT_V4:
+				if (ret)
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = *((props::TVec2F *)&m_v4f);
+					else
+						*ret = *((props::TVec2F *)p_v4f);
+				}
+
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? (props::TVec2F *)&m_v4f : (props::TVec2F *)p_v4f);
+
+				break;
 		}
 
 		return ret ? ret : nullptr;
@@ -1500,6 +1527,19 @@ public:
 				}
 
 				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? &m_v3f : p_v3f);
+
+				break;
+
+			case PT_FLOAT_V4:
+				if (ret)
+				{
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+						*ret = *((props::TVec3F *)&m_v4f);
+					else
+						*ret = *((props::TVec3F *)p_v4f);
+				}
+
+				return ret ? ret : (!m_Flags.IsSet(PROPFLAG_REFERENCE) ? (props::TVec3F *)&m_v4f : (props::TVec3F *)p_v4f);
 
 				break;
 		}
@@ -2478,7 +2518,7 @@ void CPropertySet::AppendPropertySet(const IPropertySet *propset)
 		if (!po)
 			continue;
 
-		IProperty *pp = this->GetPropertyById(po->GetID());
+		IProperty *pp = GetPropertyById(po->GetID());
 		if (!pp)
 		{
 			pp = CreateProperty(po->GetName(), po->GetID());
@@ -2683,17 +2723,20 @@ bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring 
 		for (size_t i = 0; i < 4; i++)
 		{
 			TCHAR c = pid[3 - i];
-			if (isalnum(c))
+			if (c)
 			{
-				idtemp += c;
-			}
-			else
-			{
-				idtemp += _T("&#");
-				TCHAR num[8];
-				_itot_s(c, num, 10);
-				idtemp += num;
-				idtemp += _T(";");
+				if (isalnum(c))
+				{
+					idtemp += c;
+				}
+				else
+				{
+					idtemp += _T("&#");
+					TCHAR num[8];
+					_itot_s(c, num, 10);
+					idtemp += num;
+					idtemp += _T(";");
+				}
 			}
 		}
 		xmls += idtemp;
@@ -2951,6 +2994,8 @@ bool CPropertySet::DeserializeFromXMLString(const tstring &xmls)
 					pid[3-i] = (uint8_t)(*(tid++));
 				}
 			}
+			while (!(fcc & 0xff))
+				fcc >>= 8;
 
 			props::IProperty *pp = GetPropertyById(fcc);
 
