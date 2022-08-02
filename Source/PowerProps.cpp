@@ -277,8 +277,8 @@ public:
 				break;
 		}
 
-		m_Type = PT_NONE;
-		//m_Aspect = PA_GENERIC;
+		if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+			m_Type = PT_NONE;
 	}
 
 
@@ -1049,7 +1049,9 @@ public:
 		uint32_t res_flags = (1 << EPropFlag::RESERVED1) | (1 << EPropFlag::RESERVED2);
 		m_Flags = ((uint32_t)m_Flags & res_flags) | ((uint32_t)(pprop->Flags()) & ~res_flags);
 
-		switch (pprop->GetType())
+		PROPERTY_TYPE t = (m_Flags.IsSet(PROPFLAG_REFERENCE) || m_Flags.IsSet(1 << EPropFlag::TYPELOCKED)) ? m_Type : pprop->GetType();
+
+		switch (t)
 		{
 			case PT_STRING:
 				SetString(pprop->AsString());
