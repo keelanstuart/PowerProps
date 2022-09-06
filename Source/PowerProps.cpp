@@ -1960,52 +1960,52 @@ public:
 			}
 
 			case PT_INT:
-				*((int64_t *)buf) = m_i;
+				*((int64_t *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_i : m_i;
 				buf += sizeof(int64_t);
 				break;
 
 			case PT_INT_V2:
-				*((TVec2I *)buf) = m_v2i;
+				*((TVec2I *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v2i : m_v2i;
 				buf += sizeof(TVec2I);
 				break;
 
 			case PT_INT_V3:
-				*((TVec3I *)buf) = m_v3i;
+				*((TVec3I *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v3i : m_v3i;
 				buf += sizeof(TVec3I);
 				break;
 
 			case PT_INT_V4:
-				*((TVec4I *)buf) = m_v4i;
+				*((TVec4I *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v4i : m_v4i;
 				buf += sizeof(TVec4I);
 				break;
 
 			case PT_FLOAT:
-				*((float *)buf) = m_f;
+				*((float *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_f : m_f;
 				buf += sizeof(float);
 				break;
 
 			case PT_FLOAT_V2:
-				*((TVec2F *)buf) = m_v2f;
+				*((TVec2F *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v2f : m_v2f;
 				buf += sizeof(TVec2F);
 				break;
 
 			case PT_FLOAT_V3:
-				*((TVec3F *)buf) = m_v3f;
+				*((TVec3F *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v3f : m_v3f;
 				buf += sizeof(TVec3F);
 				break;
 
 			case PT_FLOAT_V4:
-				*((TVec4F *)buf) = m_v4f;
+				*((TVec4F *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_v4f : m_v4f;
 				buf += sizeof(TVec4F);
 				break;
 
 			case PT_GUID:
-				*((GUID *)buf) = m_g;
+				*((GUID *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_g : m_g;
 				buf += sizeof(GUID);
 				break;
 
 			case PT_BOOLEAN:
-				*((bool *)buf) = m_b;
+				*((bool *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_b : m_b;
 				buf += sizeof(bool);
 				break;
 
@@ -2019,12 +2019,12 @@ public:
 			}
 
 			case PT_FLOAT_MAT3X3:
-				*((TMat3x3F *)buf) = m_m3x3f;
+				*((TMat3x3F *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_m3x3f : m_m3x3f;
 				buf += sizeof(TMat3x3F);
 				break;
 
 			case PT_FLOAT_MAT4X4:
-				*((TMat4x4F *)buf) = m_m4x4f;
+				*((TMat4x4F *)buf) = m_Flags.IsSet(PROPFLAG_REFERENCE) ? *p_m4x4f : m_m4x4f;
 				buf += sizeof(TMat4x4F);
 				break;
 		}
@@ -2077,52 +2077,82 @@ public:
 			}
 
 			case PT_INT:
-				m_i = *((int64_t *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_i = *((int64_t *)buf);
+				else
+					m_i = *((int64_t *)buf);
 				buf += sizeof(int64_t);
 				break;
 
 			case PT_INT_V2:
-				m_v2i = *((TVec2I *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v2i = *((TVec2I *)buf);
+				else
+					m_v2i = *((TVec2I *)buf);
 				buf += sizeof(TVec2I);
 				break;
 
 			case PT_INT_V3:
-				m_v3i = *((TVec3I *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v3i = *((TVec3I *)buf);
+				else
+					m_v3i = *((TVec3I *)buf);
 				buf += sizeof(TVec3I);
 				break;
 
 			case PT_INT_V4:
-				m_v4i = *((TVec4I *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v4i = *((TVec4I *)buf);
+				else
+					m_v4i = *((TVec4I *)buf);
 				buf += sizeof(TVec4I);
 				break;
 
 			case PT_FLOAT:
-				m_f = *((float *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_f = *((float *)buf);
+				else
+					m_f = *((float *)buf);
 				buf += sizeof(float);
 				break;
 
 			case PT_FLOAT_V2:
-				m_v2f = *((TVec2F *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v2f = *((TVec2F *)buf);
+				else
+					m_v2f = *((TVec2F *)buf);
 				buf += sizeof(TVec2F);
 				break;
 
 			case PT_FLOAT_V3:
-				m_v3f = *((TVec3F *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v3f = *((TVec3F *)buf);
+				else
+					m_v3f = *((TVec3F *)buf);
 				buf += sizeof(TVec3F);
 				break;
 
 			case PT_FLOAT_V4:
-				m_v4f = *((TVec4F *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_v4f = *((TVec4F *)buf);
+				else
+					m_v4f = *((TVec4F *)buf);
 				buf += sizeof(TVec4F);
 				break;
 
 			case PT_GUID:
-				m_g = *((GUID *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_g = *((GUID *)buf);
+				else
+					m_g = *((GUID *)buf);
 				buf += sizeof(GUID);
 				break;
 
 			case PT_BOOLEAN:
-				m_b = *((bool *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_b = *((bool *)buf);
+				else
+					m_b = *((bool *)buf);
 				buf += sizeof(bool);
 				break;
 
@@ -2138,12 +2168,18 @@ public:
 			}
 
 			case PT_FLOAT_MAT3X3:
-				m_m3x3f = *((TMat3x3F *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_m3x3f = *((TMat3x3F *)buf);
+				else
+					m_m3x3f = *((TMat3x3F *)buf);
 				buf += sizeof(TMat3x3F);
 				break;
 
 			case PT_FLOAT_MAT4X4:
-				m_m4x4f = *((TMat4x4F *)buf);
+				if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+					*p_m4x4f = *((TMat4x4F *)buf);
+				else
+					m_m4x4f = *((TMat4x4F *)buf);
 				buf += sizeof(TMat4x4F);
 				break;
 		}
@@ -2577,6 +2613,7 @@ bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
 	short numprops = *((short *)buf);
 	buf += sizeof(short);
 	bufsize -= sizeof(short);
+	size_t remaining = bufsize;
 
 	size_t consumed;
 
@@ -2601,10 +2638,10 @@ bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
 			return false;
 
 		buf += consumed;
-		if (consumed < bufsize)
-			return false;
+		remaining -= consumed;
 
-		bufsize -= consumed;
+		if (remaining > bufsize)
+			return false;
 	}
 
 	if (bytesconsumed)
