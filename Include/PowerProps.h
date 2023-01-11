@@ -321,6 +321,11 @@ namespace props
 			PA_SAMPLERCUBE,						/// SAMPLERCUBE - a Cube texture
 			PA_SAMPLER3D,						/// SAMPLER3D - a 3D texture
 
+			PA_PERCENTAGE,						/// Values are percentages
+			PA_ROTATION_DEG,					/// Values are rotations in degrees
+			PA_ROTATION_RAD,					/// Values are rotations in radians
+			PA_TIME_SECONDS,					/// Values are times in seconds
+
 			PA_NUMASPECTS,
 
 			PA_FIRSTUSERASPECT = PA_NUMASPECTS
