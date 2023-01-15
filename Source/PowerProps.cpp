@@ -88,10 +88,10 @@ public:
 class CProperty : public IProperty
 {
 public:
-	PROPERTY_TYPE m_Type;
-	PROPERTY_ASPECT m_Aspect;
 	tstring m_sName;
 	FOURCHARCODE m_ID;
+	PROPERTY_TYPE m_Type;
+	PROPERTY_ASPECT m_Aspect;
 	TFlags32 m_Flags;
 	CPropertySet *m_pOwner;
 
