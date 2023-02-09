@@ -75,7 +75,7 @@ public:
 	virtual IProperty *operator [](const TCHAR *propname) const { return GetPropertyByName(propname); }
 	virtual CPropertySet &operator =(IPropertySet *propset);
 	virtual CPropertySet &operator +=(IPropertySet *propset);
-	virtual void AppendPropertySet(const IPropertySet *propset);
+	virtual void AppendPropertySet(const IPropertySet *propset, bool overwrite_flags = false);
 	virtual bool Serialize(IProperty::SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused) const;
 	virtual bool Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed);
 	virtual bool SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring &xmls) const;
@@ -624,7 +624,8 @@ public:
 
 	virtual void SetAspect(PROPERTY_ASPECT aspect)
 	{
-		m_Aspect = aspect;
+		if (!m_Flags.IsSet(PROPFLAG(ASPECTLOCKED)))
+			m_Aspect = aspect;
 	}
 
 	virtual void SetInt(int64_t val)
@@ -789,6 +790,9 @@ public:
 
 	virtual void SetString(const TCHAR *val)
 	{
+		if ((m_Type == PT_STRING) && !_tcsicmp(val, m_s))
+			return;
+
 		Reset();
 
 		m_Type = PT_STRING;
@@ -1038,7 +1042,7 @@ public:
 		return 0;
 	}
 
-	virtual void SetFromProperty(IProperty *pprop)
+	virtual void SetFromProperty(IProperty *pprop, bool overwrite_flags)
 	{
 		if (!pprop)
 		{
@@ -1046,8 +1050,11 @@ public:
 			return;
 		}
 
-		uint32_t res_flags = (1 << EPropFlag::RESERVED1) | (1 << EPropFlag::RESERVED2);
-		m_Flags = ((uint32_t)m_Flags & res_flags) | ((uint32_t)(pprop->Flags()) & ~res_flags);
+		if (overwrite_flags)
+		{
+			uint32_t res_flags = (1 << EPropFlag::RESERVED1) | (1 << EPropFlag::RESERVED2);
+			m_Flags = ((uint32_t)m_Flags & res_flags) | ((uint32_t)(pprop->Flags()) & ~res_flags);
+		}
 
 		PROPERTY_TYPE t = (m_Flags.IsSet(PROPFLAG_REFERENCE) || m_Flags.IsSet(1 << EPropFlag::TYPELOCKED)) ? m_Type : pprop->GetType();
 
@@ -1183,6 +1190,26 @@ public:
 					*ret = (int64_t)(m_f);
 				else
 					*ret = (int64_t)(*p_f);
+				break;
+
+			case PT_FLOAT_V3:
+				if (m_Aspect == PA_COLOR_RGB)
+				{
+					uint8_t r, g, b;
+					if (!m_Flags.IsSet(PROPFLAG_REFERENCE))
+					{
+						r = (uint8_t)(std::clamp<float>(m_v3f.x, 0.0f, 1.0f) * 255.0f);
+						g = (uint8_t)(std::clamp<float>(m_v3f.y, 0.0f, 1.0f) * 255.0f);
+						b = (uint8_t)(std::clamp<float>(m_v3f.z, 0.0f, 1.0f) * 255.0f);
+					}
+					else
+					{
+						r = (uint8_t)(std::clamp<float>(p_v3f->x, 0.0f, 1.0f) * 255.0f);
+						g = (uint8_t)(std::clamp<float>(p_v3f->y, 0.0f, 1.0f) * 255.0f);
+						b = (uint8_t)(std::clamp<float>(p_v3f->z, 0.0f, 1.0f) * 255.0f);
+					}
+					*ret = (int64_t)(RGB(r, g, b));
+				}
 				break;
 
 			case PT_GUID:
@@ -2548,7 +2575,7 @@ CPropertySet &CPropertySet::operator +=(IPropertySet *propset)
 }
 
 
-void CPropertySet::AppendPropertySet(const IPropertySet *propset)
+void CPropertySet::AppendPropertySet(const IPropertySet *propset, bool overwrite_flags)
 {
 	for (uint32_t i = 0; i < propset->GetPropertyCount(); i++)
 	{
@@ -2564,7 +2591,7 @@ void CPropertySet::AppendPropertySet(const IPropertySet *propset)
 
 		if (pp)
 		{
-			pp->SetFromProperty(po);
+			pp->SetFromProperty(po, overwrite_flags);
 		}
 	}
 }

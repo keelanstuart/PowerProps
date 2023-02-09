@@ -353,6 +353,7 @@ namespace props
 			HIDDEN,				/// Indicates that the property is not viewable by the user
 			TOOLTIPITEM,		/// Indicates that this property should be displayed by a tooltip helper
 			TYPELOCKED,			/// The type may not be changed
+			ASPECTLOCKED,		/// The aspect may not be changed
 
 			FIRSTUSERFLAG,		/// If you need your own special flags that aren't here, start adding them at this point
 
@@ -404,7 +405,7 @@ namespace props
 		virtual void SetAspect(PROPERTY_ASPECT aspect = PA_GENERIC) = NULL;
 
 		/// Sets the data from another property
-		virtual void SetFromProperty(IProperty *pprop) = NULL;
+		virtual void SetFromProperty(IProperty *pprop, bool overwrite_flags = false) = NULL;
 
 		/// Sets the data, potentially changing the internal type
 		virtual void SetInt(int64_t val) = NULL;
@@ -525,7 +526,7 @@ namespace props
 		virtual IProperty * operator[](const TCHAR *propname) const = NULL;
 
 		/// Takes the properties from the given list and appends them to this set
-		virtual void AppendPropertySet(const IPropertySet *propset) = NULL;
+		virtual void AppendPropertySet(const IPropertySet *propset, bool overwrite_flags = false) = NULL;
 
 		/// Writes all properties to a binary stream
 		/// If buf is null but amountused is not, the number of bytes required to fully
