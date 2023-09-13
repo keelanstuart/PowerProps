@@ -305,6 +305,7 @@ namespace props
 			PA_WORLDVIEWPROJECTIONINV,			/// MATRIX - inverse(World * View * Projection)
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
 			PA_SUNSHADOWMAT,					/// MATRIX - sun light's shadow matrix
+			PA_TEXTUREMAT,						/// MATRIX - texture coordinate transform matrix
 
 			PA_COLOR_DIFFUSE,					/// COLOR - diffuse
 			PA_COLOR_EMISSIVE,					/// COLOR - emissive
