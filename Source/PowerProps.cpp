@@ -1701,10 +1701,10 @@ public:
 			{
 				if (m_es)
 				{
-					if (!ret || (retsize == 0) && (m_e < m_es->size()))
+					if ((!ret || (retsize == 0)) && (m_e < m_es->size()))
 						return m_es->at(m_e).c_str();
 					else
-						return m_s;
+						return m_s ? m_s : _T("");
 				}
 			}
 		}
@@ -1931,8 +1931,11 @@ public:
 				break;
 
 			case PT_ENUM:
-				sz += sizeof(uint64_t) + ((_tcslen(m_s) + 1) * sizeof(TCHAR));
+			{
+				sz += ((m_s ? _tcslen(m_s) : 0) + 1) * sizeof(TCHAR);
+				sz += sizeof(uint64_t);
 				break;
+			}
 
 			case PT_BOOLEAN:
 				sz += sizeof(bool);
@@ -2038,10 +2041,14 @@ public:
 
 			case PT_ENUM:
 			{
-				size_t bs = sizeof(TCHAR) * (_tcslen(m_s) + 1);
-				memcpy(buf, m_s, bs);
+				size_t bs;
+
+				bs = ((m_s ? _tcslen(m_s) : 0) + 1) * sizeof(TCHAR);
+				memcpy(buf, m_s ? m_s : _T(""), bs);
 				buf += bs;
-				*((uint64_t *)buf) = m_e;
+
+				*(uint64_t *)buf = m_e;
+				buf += sizeof(uint64_t);
 				break;
 			}
 
@@ -2185,9 +2192,10 @@ public:
 
 			case PT_ENUM:
 			{
-				TCHAR *tmp = _tcsdup((TCHAR *)buf);
-				buf += sizeof(TCHAR) * (_tcslen(tmp) + 1);
+				TCHAR *tmp = (*buf != _T('\0')) ? _tcsdup((TCHAR *)buf) : nullptr;
+				buf += ((tmp ? _tcslen(tmp) : 0) + 1) * sizeof(TCHAR);
 				SetEnumStrings(tmp);
+
 				m_e = *((uint64_t *)buf);
 				buf += sizeof(uint64_t);
 				free(tmp);
