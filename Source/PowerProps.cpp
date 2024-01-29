@@ -1219,7 +1219,7 @@ public:
 			case PT_ENUM:
 				if (m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
 				{
-					*ret = m_pep ? ((m_e >= m_pep->GetNumValues(this)) ? m_e : 0) : 0;
+					*ret = m_pep ? ((m_e < m_pep->GetNumValues(this)) ? m_e : 0) : 0;
 				}
 				else
 				{
