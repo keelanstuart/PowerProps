@@ -2194,7 +2194,8 @@ public:
 			{
 				TCHAR *tmp = (*buf != _T('\0')) ? _tcsdup((TCHAR *)buf) : nullptr;
 				buf += ((tmp ? _tcslen(tmp) : 0) + 1) * sizeof(TCHAR);
-				SetEnumStrings(tmp);
+				if (!m_Flags.IsSet(PROPFLAG_ENUMPROVIDER))
+					SetEnumStrings(tmp);
 
 				m_e = *((uint64_t *)buf);
 				buf += sizeof(uint64_t);
