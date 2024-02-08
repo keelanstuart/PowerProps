@@ -113,6 +113,16 @@ namespace props
 
 			struct
 			{
+				T min, max;
+			};
+
+			struct
+			{
+				T inner, outer;
+			};
+
+			struct
+			{
 				T lon, lat;
 			};
 
@@ -150,6 +160,11 @@ namespace props
 				T lon, lat, alt;
 			};
 
+			struct
+			{
+				T r, g, b;
+			};
+
 			T v[3];
 		};
 	};
@@ -174,6 +189,11 @@ namespace props
 			struct
 			{
 				T x, y, z, w;
+			};
+
+			struct
+			{
+				T r, g, b, a;
 			};
 
 			T v[4];
@@ -355,6 +375,8 @@ namespace props
 			TOOLTIPITEM,		/// Indicates that this property should be displayed by a tooltip helper
 			TYPELOCKED,			/// The type may not be changed
 			ASPECTLOCKED,		/// The aspect may not be changed
+			MINMAX,				/// A special indicator for VEC2 properties; X -> min value, Y -> max value
+			INNEROUTER,			/// A special indicator for VEC2 properties; X -> inner value, Y -> outer value
 
 			FIRSTUSERFLAG,		/// If you need your own special flags that aren't here, start adding them at this point
 
