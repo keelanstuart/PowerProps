@@ -1877,7 +1877,7 @@ public:
 
 	virtual bool Serialize(SERIALIZE_MODE mode, BYTE *buf, size_t bufsize, size_t *amountused = NULL) const
 	{
-		if (!m_Type || (m_Type >= PT_NUMTYPES))
+		if (m_Type >= PT_NUMTYPES)
 			return false;
 
 		size_t sz = sizeof(BYTE) /*serialization type*/ + sizeof(FOURCHARCODE) /*id*/ + sizeof(BYTE) /*PROPERTY_TYPE*/;
@@ -2083,7 +2083,7 @@ public:
 		buf += sizeof(FOURCHARCODE);
 
 		m_Type = PROPERTY_TYPE(*buf);
-		if (!m_Type || (m_Type >= PT_NUMTYPES))
+		if (m_Type >= PT_NUMTYPES)
 			return false;
 		buf += sizeof(BYTE);
 
