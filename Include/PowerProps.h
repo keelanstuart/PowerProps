@@ -491,6 +491,9 @@ namespace props
 		/// Returns true if the value of this property matches that of the given property
 		virtual bool IsSameAs(const IProperty *other_prop) const = NULL;
 
+		/// In the event that this is a reference property, will make it a self-contained external property instead
+		virtual void ExternalizeReference() = NULL;
+
 	};
 
 
@@ -504,6 +507,7 @@ namespace props
 		virtual void PropertyChanged(const IProperty *pprop) = NULL;
 
 	};
+
 
 	/// IPropertySet is a container for IProperty instances, 
 	class IPropertySet

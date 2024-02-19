@@ -2311,6 +2311,114 @@ public:
 
 		return true;
 	}
+
+	virtual void ExternalizeReference()
+	{
+		if (GetEnumProvider())
+		{
+			TStringDeque *tmp = new TStringDeque();
+			for (size_t i = 0, maxi = m_pep->GetNumValues(this); i < maxi; i++)
+				tmp->push_back(tstring(m_pep->GetValue(this, i)));
+			m_es = tmp;
+
+			m_Flags.IsSet(PROPFLAG_ENUMPROVIDER);
+		}
+
+		if (m_Flags.IsSet(PROPFLAG_REFERENCE))
+		{
+			// this might seem like overkill, but these are unioned...
+			switch (m_Type)
+			{
+				case PROPERTY_TYPE::PT_BOOLEAN:
+				{
+					auto tmp = *p_b;
+					m_b = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_ENUM:
+				case PROPERTY_TYPE::PT_INT:
+				{
+					auto tmp = *p_i;
+					m_i = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT:
+				{
+					auto tmp = *p_f;
+					m_f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT_V2:
+				{
+					auto tmp = *p_v2f;
+					m_v2f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT_V3:
+				{
+					auto tmp = *p_v3f;
+					m_v3f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT_V4:
+				{
+					auto tmp = *p_v4f;
+					m_v4f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_INT_V2:
+				{
+					auto tmp = *p_v2i;
+					m_v2i = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_INT_V3:
+				{
+					auto tmp = *p_v3i;
+					m_v3i = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_INT_V4:
+				{
+					auto tmp = *p_v4i;
+					m_v4i = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT_MAT3X3:
+				{
+					auto tmp = *p_m3x3f;
+					m_m3x3f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_FLOAT_MAT4X4:
+				{
+					auto tmp = *p_m4x4f;
+					m_m4x4f = tmp;
+					break;
+				}
+
+				case PROPERTY_TYPE::PT_GUID:
+				{
+					auto tmp = *p_g;
+					m_g = tmp;
+					break;
+				}
+			}
+
+			m_Flags.Clear(PROPFLAG_REFERENCE);
+		}
+	}
+
 };
 
 
