@@ -313,6 +313,7 @@ namespace props
 			PA_VIEWINV,							/// MATRIX - inverse(View)
 			PA_VIEWINVTRANS,					/// MATRIX - inverse(transpose(View))
 			PA_VIEWPROJECTION,					/// MATRIX - View * Projection
+			PA_WORLDPROJECTION,					/// MATRIX - World * Projection
 			PA_VIEWPROJECTIONINV,				/// MATRIX - inverse(View * Projection)
 			PA_VIEWPROJECTIONINVTRANS,			/// MATRIX - inverse(transpose(View * Projection))
 			PA_PROJECTION,						/// MATRIX - Projection
@@ -346,6 +347,8 @@ namespace props
 			PA_ROTATION_DEG,					/// Values are rotations in degrees
 			PA_ROTATION_RAD,					/// Values are rotations in radians
 			PA_TIME_SECONDS,					/// Values are times in seconds
+
+			PA_DIMENSIONS,						/// Length, Width, Height - those kinds of things
 
 			PA_NUMASPECTS,
 

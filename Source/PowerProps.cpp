@@ -2321,7 +2321,7 @@ public:
 				tmp->push_back(tstring(m_pep->GetValue(this, i)));
 			m_es = tmp;
 
-			m_Flags.IsSet(PROPFLAG_ENUMPROVIDER);
+			m_Flags.Clear(PROPFLAG_ENUMPROVIDER);
 		}
 
 		if (m_Flags.IsSet(PROPFLAG_REFERENCE))
