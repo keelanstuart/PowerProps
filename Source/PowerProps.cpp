@@ -3035,14 +3035,26 @@ bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring 
 
 		xmls += _T(">");
 
-		TCHAR _s[1 << 14];
+		TCHAR _s[1 << 10];
+		_s[0] = _T('\0');
+
 		if (it->second->GetType() != props::IProperty::PROPERTY_TYPE::PT_ENUM)
 		{
 			it->second->AsString(_s, _countof(_s));
 		}
 		else
 		{
-			it->second->GetEnumStrings(_s, _countof(_s));
+			TCHAR *q = _s;
+			size_t maxi = it->second->GetMaxEnumVal();
+			for (size_t i = 0; i < maxi; i++)
+			{
+				it->second->GetEnumString(i, q, _countof(_s));
+				if (i != (maxi - 1))
+				{
+					_tcscat_s(_s, _T(","));
+					q = _s + _tcslen(_s);
+				}
+			}
 			TCHAR num[16];
 			_i64tot_s(it->second->AsInt(), num, _countof(num), 10);
 			_tcscat_s(_s, _T(":"));
