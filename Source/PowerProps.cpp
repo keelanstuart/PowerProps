@@ -2442,7 +2442,13 @@ IProperty *CPropertySet::CreateProperty(const TCHAR *propname, FOURCHARCODE prop
 {
 	TPropertyMap::const_iterator pi = m_mapProps.find(propid);
 	if ((pi != m_mapProps.end()) && pi->second)
+	{
+		// if the property already existed, then alert the listener to it's value
+		if (m_pListener)
+			m_pListener->PropertyChanged(pi->second);
+
 		return pi->second;
+	}
 
 	CProperty *pprop = new CProperty(this);
 	if (pprop)
