@@ -2765,7 +2765,7 @@ bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
 	bufsize -= sizeof(short);
 	size_t remaining = bufsize;
 
-	size_t consumed;
+	size_t consumed = sizeof(short);
 
 	for (short i = 0; i < numprops; i++)
 	{
@@ -2784,11 +2784,14 @@ bool CPropertySet::Deserialize(BYTE *buf, size_t bufsize, size_t *bytesconsumed)
 			}
 		}
 
-		if (!p || !p->Deserialize(buf, bufsize, &consumed))
+		size_t bc = 0;
+		if (!p || !p->Deserialize(buf, bufsize, &bc))
 			return false;
 
-		buf += consumed;
-		remaining -= consumed;
+		consumed += bc;
+
+		buf += bc;
+		remaining -= bc;
 
 		if (remaining > bufsize)
 			return false;
