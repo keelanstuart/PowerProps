@@ -2472,7 +2472,80 @@ IProperty *CPropertySet::CreateReferenceProperty(const TCHAR *propname, FOURCHAR
 	// reference properties with duplicate IDs are not allowed
 	TPropertyMap::const_iterator pi = m_mapProps.find(propid);
 	if ((pi != m_mapProps.end()) && pi->second)
-		return pi->second;
+	{
+		CProperty *ret = (CProperty *)(pi->second);
+
+		// if the property we found isn't a reference property, we need to update the reference values if they're the same type, then internalize the property...
+		if ((type == ret->GetType()) && !ret->Flags().IsSet(PROPFLAG_REFERENCE))
+		{
+			ret->Flags().Set(PROPFLAG_REFERENCE);
+
+			switch (type)
+			{
+				case IProperty::PROPERTY_TYPE::PT_INT:
+					*((int64_t *)addr) = (ret->m_i);
+					ret->p_i = (int64_t *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_INT_V2:
+					*((TVec2I *)addr) = (ret->m_v2i);
+					ret->p_v2i = (TVec2I *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_INT_V3:
+					*((TVec3I *)addr) = (ret->m_v3i);
+					ret->p_v3i = (TVec3I *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_INT_V4:
+					*((TVec4I *)addr) = (ret->m_v4i);
+					ret->p_v4i = (TVec4I *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT:
+					*((float *)addr) = (ret->m_f);
+					ret->p_f = (float *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT_V2:
+					*((TVec2F *)addr) = (ret->m_v2f);
+					ret->p_v2f = (TVec2F *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT_V3:
+					*((TVec3F *)addr) = (ret->m_v3f);
+					ret->p_v3f = (TVec3F *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT_V4:
+					*((TVec4F *)addr) = (ret->m_v4f);
+					ret->p_v4f = (TVec4F *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT_MAT3X3:
+					*((TMat3x3F *)addr) = (ret->m_m3x3f);
+					ret->p_m3x3f = (TMat3x3F *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_FLOAT_MAT4X4:
+					*((TMat4x4F *)addr) = (ret->m_m4x4f);
+					ret->p_m4x4f = (TMat4x4F *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_BOOLEAN:
+					*((bool *)addr) = (ret->m_b);
+					ret->p_b = (bool *)addr;
+					break;
+
+				case IProperty::PROPERTY_TYPE::PT_GUID:
+					*((GUID *)addr) = (ret->m_g);
+					ret->p_g = (GUID *)addr;
+					break;
+			}
+		}
+
+		return ret;
+	}
 
 	CProperty *pprop = new CProperty(this);
 	if (!pprop)
@@ -3044,7 +3117,7 @@ bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring 
 
 		xmls += _T(">");
 
-		TCHAR _s[1 << 10];
+		TCHAR _s[1 << 11];
 		_s[0] = _T('\0');
 
 		if (it->second->GetType() != props::IProperty::PROPERTY_TYPE::PT_ENUM)
