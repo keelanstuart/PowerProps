@@ -3117,7 +3117,8 @@ bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring 
 
 		xmls += _T(">");
 
-		TCHAR _s[1 << 11];
+		TCHAR _q[1 << 12];
+		TCHAR _s[1 << 17];
 		_s[0] = _T('\0');
 
 		if (it->second->GetType() != props::IProperty::PROPERTY_TYPE::PT_ENUM)
@@ -3126,16 +3127,13 @@ bool CPropertySet::SerializeToXMLString(IProperty::SERIALIZE_MODE mode, tstring 
 		}
 		else
 		{
-			TCHAR *q = _s;
-			size_t maxi = it->second->GetMaxEnumVal();
-			for (size_t i = 0; i < maxi; i++)
+			TCHAR *q = _q;
+			for (size_t i = 0; i < it->second->GetMaxEnumVal(); i++)
 			{
-				it->second->GetEnumString(i, q, _countof(_s));
-				if (i != (maxi - 1))
-				{
+				it->second->GetEnumString(i, q, _countof(_q));
+				_tcscat_s(_s, _q);
+				if (i < (it->second->GetMaxEnumVal() - 1))
 					_tcscat_s(_s, _T(","));
-					q = _s + _tcslen(_s);
-				}
 			}
 			TCHAR num[16];
 			_i64tot_s(it->second->AsInt(), num, _countof(num), 10);
