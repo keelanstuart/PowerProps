@@ -349,6 +349,8 @@ namespace props
 			PA_TIME_SECONDS,					/// Values are times in seconds
 
 			PA_DIMENSIONS,						/// Length, Width, Height - those kinds of things
+			PA_RECT,
+			PA_RECT_TLBR,
 
 			PA_NUMASPECTS,
 
