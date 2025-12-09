@@ -327,6 +327,8 @@ namespace props
 			PA_WORLDVIEWPROJECTIONINVTRANS,		/// MATRIX - inverse(transpose(World * View * Projection))
 			PA_SUNSHADOWMAT,					/// MATRIX - sun light's shadow matrix
 			PA_TEXTUREMAT,						/// MATRIX - texture coordinate transform matrix
+			PA_NEARCLIPDIST,					/// FLOAT - the distance from the eye to the near clipping plane
+			PA_FARCLIPDIST,						/// FLOAT - the distance from the eye to the far clipping plane
 
 			PA_COLOR_DIFFUSE,					/// COLOR - diffuse
 			PA_COLOR_EMISSIVE,					/// COLOR - emissive
