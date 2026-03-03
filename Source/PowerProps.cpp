@@ -1141,14 +1141,9 @@ public:
 				break;
 
 			case PT_ENUM:
-				if (pprop->GetEnumProvider())
-				{
-					SetEnumProvider(pprop->GetEnumProvider());
-				}
-				else
-				{
+				if (!pprop->GetEnumProvider())
 					SetEnumStrings(pprop->GetEnumStrings());
-				}
+
 				SetEnumVal((size_t)(pprop->AsInt()));
 				break;
 		}
