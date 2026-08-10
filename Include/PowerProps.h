@@ -2,7 +2,7 @@
 
 	PowerProps Library Source File
 
-	Copyright © 2009-2021, Keelan Stuart. All rights reserved.
+	Copyright Â© 2009-2026, Keelan Stuart. All rights reserved.
 
 	PowerProps is a generic property library which one can use to maintain
 	easily discoverable data in a number of types, as well as convert that
