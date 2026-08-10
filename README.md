@@ -634,6 +634,70 @@ The provider can expose its state while interested systems react to changes thro
 
 ---
 
+## A small common data vocabulary
+
+PowerProps also includes a handful of lightweight utility types that make it easier for unrelated systems to agree on common kinds of data.
+
+For example:
+
+```cpp
+props::TFlags64 flags;
+props::TVec3F position;
+props::TVec4F color;
+props::TMat4x4F transform;
+```
+
+The flag types provide convenient bitfield operations:
+
+```cpp
+props::TFlags64 flags;
+
+flags.Set(0x04);
+flags.Set(0x10);
+
+if (flags.IsSet(0x04))
+{
+    // ...
+}
+
+flags.Clear(0x04);
+```
+
+Vector types provide common 2D, 3D, and 4D representations:
+
+```cpp
+props::TVec3F position(10.0f, 20.0f, 30.0f);
+
+float x = position.x;
+float y = position.y;
+float z = position.z;
+```
+
+Some types also provide useful aliases for the same underlying data:
+
+```cpp
+props::TVec3F color;
+
+color.r = 1.0f;
+color.g = 0.5f;
+color.b = 0.25f;
+```
+
+or:
+
+```cpp
+props::TVec2F location;
+
+location.lon = -81.2f;
+location.lat = 28.5f;
+```
+
+PowerProps also includes 3x3 and 4x4 floating-point matrix types for values that need to move through the property system without depending on a particular math library.
+
+These helpers are intentionally small. They provide a common vocabulary for property data without forcing the rest of an application to adopt a larger framework.
+
+---
+
 ## Design Philosophy
 
 PowerProps favors practical abstractions over clever ones.
