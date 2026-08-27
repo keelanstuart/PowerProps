@@ -65,8 +65,7 @@ Properties live inside an `IPropertySet`.
 Create one like this:
 
 ```cpp
-props::IPropertySet* properties =
-    props::IPropertySet::CreatePropertySet();
+props::IPropertySet *properties = props::IPropertySet::CreatePropertySet();
 ```
 
 A property set is simply a discoverable collection of related properties.
@@ -86,38 +85,30 @@ The code consuming that set does not need to know what subsystem created it.
 It can enumerate everything that is available:
 
 ```cpp
-for (size_t i = 0;
-     i < properties->GetPropertyCount();
-     i++)
+for (size_t i = 0; i < properties->GetPropertyCount(); i++)
 {
-    props::IProperty* property =
-        properties->GetProperty(i);
+    props::IProperty *property = properties->GetProperty(i);
 
-    // Inspect its name, ID, type,
-    // aspect, flags, value...
+    // Inspect its name, ID, type, aspect, flags, value...
 }
 ```
 
 Or retrieve an individual property by name:
 
 ```cpp
-props::IProperty* compression =
-    properties->GetPropertyByName(
-        _T("CompressionLevel"));
+props::IProperty *compression = properties->GetPropertyByName(_T("CompressionLevel"));
 ```
 
 by ID:
 
 ```cpp
-props::IProperty* compression =
-    properties->GetPropertyById('COMP');
+props::IProperty *compression = properties->GetPropertyById('COMP');
 ```
 
 or through the indexing interface:
 
 ```cpp
-props::IProperty* compression =
-    (*properties)['COMP'];
+props::IProperty *compression = (*properties)['COMP'];
 ```
 
 The property set provides the common point of discovery.
@@ -129,10 +120,7 @@ The property set provides the common point of discovery.
 Create a property through its property set:
 
 ```cpp
-props::IProperty* compression =
-    properties->CreateProperty(
-        _T("CompressionLevel"),
-        'COMP');
+props::IProperty *compression = properties->CreateProperty(_T("CompressionLevel"), 'COMP');
 ```
 
 Then give it a value:
@@ -146,29 +134,21 @@ The property now knows that it contains an integer.
 Its value can be read later with:
 
 ```cpp
-int64_t level =
-    compression->AsInt();
+int64_t level = compression->AsInt();
 ```
 
 A string property works the same way:
 
 ```cpp
-props::IProperty* output_path =
-    properties->CreateProperty(
-        _T("OutputPath"),
-        'PATH');
+props::IProperty *output_path = properties->CreateProperty(_T("OutputPath"), 'PATH');
 
-output_path->SetString(
-    _T("C:\\Build\\Output"));
+output_path->SetString(_T("C:\\Build\\Output"));
 ```
 
 And a boolean:
 
 ```cpp
-props::IProperty* manifest =
-    properties->CreateProperty(
-        _T("GenerateManifest"),
-        'MNFT');
+props::IProperty *manifest = properties->CreateProperty(_T("GenerateManifest"), 'MNFT');
 
 manifest->SetBool(true);
 ```
@@ -186,13 +166,9 @@ Sometimes knowing the data type isn't enough.
 Consider this:
 
 ```cpp
-props::IProperty* output_file =
-    properties->CreateProperty(
-        _T("OutputFile"),
-        'OUTF');
+props::IProperty *output_file = properties->CreateProperty(_T("OutputFile"), 'OUTF');
 
-output_file->SetString(
-    _T("installer.exe"));
+output_file->SetString(_T("installer.exe"));
 ```
 
 PowerProps knows that `OutputFile` is a string.
@@ -202,8 +178,7 @@ But a generic editor still doesn't know what kind of string it represents.
 Add an aspect:
 
 ```cpp
-output_file->SetAspect(
-    props::IProperty::PA_FILENAME);
+output_file->SetAspect(props::IProperty::PA_FILENAME);
 ```
 
 Now a consumer can know that this isn't merely arbitrary text.
@@ -213,40 +188,27 @@ An editor could present a file browser.
 A directory works the same way:
 
 ```cpp
-output_path->SetAspect(
-    props::IProperty::PA_DIRECTORY);
+output_path->SetAspect(props::IProperty::PA_DIRECTORY);
 ```
 
 A float can describe a percentage:
 
 ```cpp
-props::IProperty* progress =
-    properties->CreateProperty(
-        _T("Progress"),
-        'PRGS');
+props::IProperty *progress = properties->CreateProperty(_T("Progress"), 'PRGS');
 
 progress->SetFloat(75.0f);
 
-progress->SetAspect(
-    props::IProperty::PA_PERCENTAGE);
+progress->SetAspect(props::IProperty::PA_PERCENTAGE);
 ```
 
 A vector can represent a color:
 
 ```cpp
-props::IProperty* tint =
-    properties->CreateProperty(
-        _T("Tint"),
-        'TINT');
+props::IProperty *tint = properties->CreateProperty(_T("Tint"), 'TINT');
 
-tint->SetVec3F(
-    props::TVec3F(
-        1.0f,
-        0.5f,
-        0.25f));
+tint->SetVec3F(props::TVec3F(1.0f, 0.5f, 0.25f));
 
-tint->SetAspect(
-    props::IProperty::PA_COLOR_RGB);
+tint->SetAspect(props::IProperty::PA_COLOR_RGB);
 ```
 
 Or that same underlying vector type might represent latitude and longitude, a rotation, eye position, sun direction, dimensions, or something entirely different.
@@ -274,32 +236,17 @@ For example:
 ```cpp
 props::TVec3F model_position;
 props::TVec3F model_orientation;
-props::TVec3F model_scale(
-    1.0f,
-    1.0f,
-    1.0f);
+props::TVec3F model_scale(1.0f, 1.0f, 1.0f);
 ```
 
 Expose those values directly:
 
 ```cpp
-properties->CreateReferenceProperty(
-    _T("ModelPosition"),
-    'POSN',
-    &model_position,
-    props::IProperty::PT_FLOAT_V3);
+properties->CreateReferenceProperty(_T("ModelPosition"), 'POSN', &model_position, props::IProperty::PT_FLOAT_V3);
 
-properties->CreateReferenceProperty(
-    _T("ModelOrientation"),
-    'ORNT',
-    &model_orientation,
-    props::IProperty::PT_FLOAT_V3);
+properties->CreateReferenceProperty(_T("ModelOrientation"), 'ORNT', &model_orientation, props::IProperty::PT_FLOAT_V3);
 
-properties->CreateReferenceProperty(
-    _T("ModelScale"),
-    'SCAL',
-    &model_scale,
-    props::IProperty::PT_FLOAT_V3);
+properties->CreateReferenceProperty(_T("ModelScale"), 'SCAL', &model_scale, props::IProperty::PT_FLOAT_V3);
 ```
 
 Those properties do not contain duplicate copies of the values.
@@ -332,39 +279,23 @@ PackageName
 A property set can describe them:
 
 ```cpp
-props::IPropertySet* package =
-    props::IPropertySet::CreatePropertySet();
+props::IPropertySet *package = props::IPropertySet::CreatePropertySet();
 
-props::IProperty* name =
-    package->CreateProperty(
-        _T("PackageName"),
-        'NAME');
+props::IProperty *name = package->CreateProperty(_T("PackageName"), 'NAME');
 
-name->SetString(
-    _T("MyApplication"));
+name->SetString(_T("MyApplication"));
 
-props::IProperty* output =
-    package->CreateProperty(
-        _T("OutputPath"),
-        'PATH');
+props::IProperty *output = package->CreateProperty(_T("OutputPath"), 'PATH');
 
-output->SetString(
-    _T("C:\\Build\\Output"));
+output->SetString(_T("C:\\Build\\Output"));
 
-output->SetAspect(
-    props::IProperty::PA_DIRECTORY);
+output->SetAspect(props::IProperty::PA_DIRECTORY);
 
-props::IProperty* compression =
-    package->CreateProperty(
-        _T("CompressionLevel"),
-        'COMP');
+props::IProperty *compression = package->CreateProperty(_T("CompressionLevel"), 'COMP');
 
 compression->SetInt(5);
 
-props::IProperty* manifest =
-    package->CreateProperty(
-        _T("GenerateManifest"),
-        'MNFT');
+props::IProperty *manifest = package->CreateProperty(_T("GenerateManifest"), 'MNFT');
 
 manifest->SetBool(true);
 ```
@@ -420,27 +351,19 @@ They only need to understand properties.
 A consumer can inspect a property set without knowing ahead of time what it contains:
 
 ```cpp
-for (size_t i = 0;
-     i < package->GetPropertyCount();
-     i++)
+for (size_t i = 0; i < package->GetPropertyCount(); i++)
 {
-    props::IProperty* property =
-        package->GetProperty(i);
+    props::IProperty *property = package->GetProperty(i);
 
-    const TCHAR* name =
-        property->GetName();
+    const TCHAR *name = property->GetName();
 
-    props::FOURCHARCODE id =
-        property->GetID();
+    props::FOURCHARCODE id = property->GetID();
 
-    props::IProperty::PROPERTY_TYPE type =
-        property->GetType();
+    props::IProperty::PROPERTY_TYPE type = property->GetType();
 
-    props::IProperty::PROPERTY_ASPECT aspect =
-        property->GetAspect();
+    props::IProperty::PROPERTY_ASPECT aspect = property->GetAspect();
 
-    // Decide what to do based on what
-    // the property says about itself.
+    // Decide what to do based on what the property says about itself
 }
 ```
 
@@ -549,14 +472,9 @@ Properties can also represent enumerated values.
 Enumeration strings can be provided directly:
 
 ```cpp
-props::IProperty* quality =
-    properties->CreateProperty(
-        _T("Quality"),
-        'QUAL');
+props::IProperty* quality = properties->CreateProperty(_T("Quality"), 'QUAL');
 
-quality->SetEnumStrings(
-    _T("Low,Medium,High,Ultra"));
-
+quality->SetEnumStrings(_T("Low,Medium,High,Ultra"));
 quality->SetEnumVal(2);
 ```
 
@@ -590,11 +508,7 @@ For example:
 ```cpp
 size_t required = 0;
 
-package->Serialize(
-    props::IProperty::SM_BIN_VERBOSE,
-    nullptr,
-    0,
-    &required);
+package->Serialize(props::IProperty::SM_BIN_VERBOSE, nullptr, 0, &required);
 ```
 
 The property set can also serialize to and deserialize from XML.
@@ -608,13 +522,11 @@ This means the same property description used for editors and plugins can also s
 A system that needs to react when properties change can implement `IPropertyChangeListener`:
 
 ```cpp
-class PropertyListener :
-    public props::IPropertyChangeListener
+class PropertyListener : public props::IPropertyChangeListener
 {
 public:
 
-    void PropertyChanged(
-        const props::IProperty* property) override
+    void PropertyChanged(const props::IProperty *property) override
     {
         // React to the change.
     }
@@ -626,8 +538,7 @@ and register it with the set:
 ```cpp
 PropertyListener listener;
 
-properties->SetChangeListener(
-    &listener);
+properties->SetChangeListener(&listener);
 ```
 
 The provider can expose its state while interested systems react to changes through the same property model.
